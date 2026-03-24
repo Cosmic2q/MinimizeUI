@@ -1,398 +1,220 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swiftz Topup - Premium Project</title>
-    
-    <!-- Google Fonts: Kanit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Kanit', 'sans-serif'],
-                    },
-                    colors: {
-                        glass: {
-                            100: 'rgba(255, 255, 255, 0.1)',
-                            200: 'rgba(255, 255, 255, 0.15)',
-                            300: 'rgba(255, 255, 255, 0.25)',
-                        }
-                    },
-                    animation: {
-                        'slide-up': 'slideUp 0.3s ease-out forwards',
-                        'fade-out': 'fadeOut 0.3s ease-in forwards',
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        slideUp: {
-                            '0%': { transform: 'translate(50%, 100%)', opacity: '0' },
-                            '100%': { transform: 'translate(50%, 0)', opacity: '1' },
-                        },
-                        fadeOut: {
-                            '0%': { opacity: '1' },
-                            '100%': { opacity: '0', display: 'none' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body {
-            font-family: 'Kanit', sans-serif;
-            background: #020617;
-            background: radial-gradient(circle at 50% -20%, #1e293b, #020617);
-            background-attachment: fixed;
-            color: #ffffff;
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .glass-input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .glass-input:focus {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-        }
-
-        .package-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.25s ease;
-        }
-
-        .package-card:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-4px);
-        }
-
-        .package-card.selected {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%);
-            border-color: #3b82f6;
-            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.3);
-        }
-
-        .loader {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 2px solid white;
-            width: 18px;
-            height: 18px;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Responsive adjustments for Toast */
-        #toastContainer {
-            left: 0;
-            right: 0;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Top-Up Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+body {
+    font-family: 'Kanit', sans-serif;
+    background: radial-gradient(circle at top right, rgba(99,102,241,0.15), transparent),
+                radial-gradient(circle at bottom left, rgba(79,70,229,0.1), transparent);
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#f8fafc;
+}
+.glass-card {
+    background: rgba(30,41,59,0.7);
+    backdrop-filter: blur(12px);
+    border-radius:1.5rem;
+    padding:2rem;
+    width:100%;
+    max-width:600px;
+}
+.input-field {
+    background: rgba(15,23,42,0.6);
+    border:2px solid rgba(255,255,255,0.1);
+    border-radius:1rem;
+    padding:1rem;
+    width:100%;
+    color:white;
+}
+.input-field:focus {
+    outline:none;
+    border-color:#6366f1;
+    box-shadow:0 0 0 4px rgba(99,102,241,0.2);
+}
+.package-card {
+    cursor:pointer;
+    border:2px solid transparent;
+    border-radius:1rem;
+    padding:1rem;
+    text-align:center;
+    transition: all 0.2s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+.package-card:hover {
+    transform:translateY(-4px);
+    background: rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.3);
+}
+.package-card.selected {
+    border-color:#6366f1;
+    background: rgba(99,102,241,0.2);
+    box-shadow: 0 0 20px rgba(99,102,241,0.3);
+}
+.check-badge {
+    position:absolute;
+    top:-8px;
+    right:-8px;
+    background:#6366f1;
+    color:white;
+    border-radius:50%;
+    padding:2px;
+    display:none;
+}
+.package-card.selected .check-badge { display:block; }
+.btn-submit {
+    width:100%;
+    padding:1rem;
+    border-radius:1rem;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    font-weight:bold;
+    cursor:pointer;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.btn-submit:disabled {
+    opacity:0.6;
+    cursor:not-allowed;
+}
+.spinner {
+    width:20px;
+    height:20px;
+    border:3px solid rgba(255,255,255,0.3);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin-left:0.5rem;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
 </head>
-<body class="p-4 md:p-10">
-
-    <!-- Ambient background light -->
-    <div class="fixed top-1/4 left-1/4 w-64 h-64 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow"></div>
-    <div class="fixed bottom-1/4 right-1/4 w-64 h-64 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" style="animation-delay: 2s"></div>
-
-    <main class="glass-panel w-full max-w-xl md:max-w-2xl rounded-[2.5rem] p-6 md:p-10 relative z-10 flex flex-col gap-8">
-        
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
-            <div class="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-3xl glass-panel bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center shadow-inner">
-                <i data-lucide="zap" class="w-8 h-8 md:w-10 md:h-10 text-blue-400 fill-blue-400/20"></i>
-            </div>
-            <div>
-                <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-white to-purple-400">
-                    Swiftz Topup
-                </h1>
-                <p class="text-gray-400 text-sm md:text-base mt-1">บริการเติมเกมอัตโนมัติ 24 ชม. รวดเร็วและปลอดภัย</p>
-            </div>
-        </header>
-
-        <!-- Main Form -->
-        <div class="grid grid-cols-1 gap-8">
-            
-            <!-- Step 1: UID Input -->
-            <section class="space-y-4">
-                <label class="flex items-center gap-3 text-blue-100 font-medium text-lg">
-                    <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 text-sm">1</span>
-                    ระบุข้อมูลผู้ใช้
-                </label>
-                <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-400 text-gray-500">
-                        <!-- Changed icon from fingerprint to user -->
-                        <i data-lucide="user" class="w-5 h-5"></i>
-                    </div>
-                    <input 
-                        type="text" 
-                        id="uidInput" 
-                        inputmode="numeric"
-                        placeholder="ระบุ Game UID (8 หลักขึ้นไป)" 
-                        class="glass-input w-full rounded-2xl py-4 pl-12 pr-4 text-base md:text-lg placeholder-gray-600 tracking-widest font-mono"
-                        maxlength="15"
-                    >
-                </div>
-                <p id="uidError" class="text-red-400 text-xs hidden flex items-center gap-2 px-1">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                    UID...
-                </p>
-            </section>
-
-            <!-- Step 2: Package Selection -->
-            <section class="space-y-4">
-                <label class="flex items-center gap-3 text-purple-100 font-medium text-lg">
-                    <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 text-sm">2</span>
-                    เลือกแพ็กเกจ
-                </label>
-                
-                <!-- Packages Grid -->
-                <div id="packagesContainer" class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                    <!-- Dynamic Packages -->
-                </div>
-            </section>
+<body>
+<div class="glass-card">
+    <h1 class="text-3xl font-bold mb-4 text-center">GAME TOP-UP</h1>
+    <form id="orderForm" class="space-y-4">
+        <div>
+            <label>Game UID (8 หลักขึ้นไป)</label>
+            <input type="text" id="uid" class="input-field" placeholder="กรอก UID ของคุณ...">
+            <p id="uidError" class="text-red-400 text-sm hidden">UID ต้องเป็นตัวเลขอย่างน้อย 8 หลัก</p>
         </div>
-
-        <!-- Checkout Summary -->
-        <section class="mt-2 space-y-6">
-            <div class="glass-panel rounded-3xl p-5 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/5 border-white/5">
-                <div class="text-center md:text-left">
-                    <p class="text-gray-400 text-xs md:text-sm uppercase tracking-wider mb-1">สรุปรายการ</p>
-                    <p class="text-lg md:text-xl font-medium">
-                        เลือกแล้ว <span id="selectedCount" class="text-blue-400">0</span> รายการ
-                    </p>
-                </div>
-                <div class="text-center md:text-right">
-                    <p class="text-gray-400 text-xs md:text-sm uppercase tracking-wider mb-1">ยอดชำระทั้งหมด</p>
-                    <p class="text-3xl md:text-4xl font-bold text-white">
-                        <span class="text-green-400 text-xl md:text-2xl mr-1">฿</span><span id="totalPrice">0</span>
-                    </p>
-                </div>
+        <div>
+            <label>เลือกแพ็กเกจ (เลือกได้หลายรายการ)</label>
+            <div id="packageGrid" class="grid grid-cols-2 gap-2 mt-2">
+                <!-- Package Cards -->
             </div>
+        </div>
+        <button type="submit" id="submitBtn" class="btn-submit" disabled>
+            ยืนยันคำสั่งซื้อ
+            <div id="spinner" class="spinner hidden"></div>
+        </button>
+    </form>
+</div>
 
-            <button 
-                id="submitBtn" 
-                class="w-full relative overflow-hidden rounded-2xl font-bold py-4 md:py-5 px-6 transition-all duration-300 disabled:opacity-40 disabled:grayscale bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 active:scale-[0.98] flex justify-center items-center gap-3"
-                disabled
-            >
-                <span id="btnText" class="text-lg">ยืนยันการสั่งซื้อ</span>
-                <i data-lucide="arrow-right" id="btnIcon" class="w-5 h-5 transition-transform"></i>
-                <div id="btnSpinner" class="loader hidden"></div>
-            </button>
-        </section>
+<script>
+lucide.createIcons();
 
-    </main>
+const packages = [
+    {name:'33 Diamonds',price:11},
+    {name:'68 Diamonds',price:21},
+    {name:'172 Diamonds',price:52},
+    {name:'310 Diamonds',price:90},
+    {name:'512 Diamonds',price:150},
+    {name:'690 Diamonds',price:200},
+    {name:'1,052 Diamonds',price:300},
+    {name:'1,801 Diamonds',price:500},
+    {name:'3,698 Diamonds',price:1000}
+];
 
-    <!-- Notification -->
-    <div id="toastContainer" class="fixed bottom-8 flex flex-col items-center gap-3 z-[100] w-full max-w-xs md:max-w-sm pointer-events-none"></div>
+const webhookUrl = 'https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k';
+const packagesContainer = document.getElementById('packageGrid');
+const uidInput = document.getElementById('uid');
+const uidError = document.getElementById('uidError');
+const submitBtn = document.getElementById('submitBtn');
+const spinner = document.getElementById('spinner');
 
-    <script>
-        lucide.createIcons();
+let selectedPackages = [];
 
-        const packages = [
-            { id: 1, diamond: 33, price: 11 },
-            { id: 2, diamond: 68, price: 21 },
-            { id: 3, diamond: 172, price: 52 },
-            { id: 4, diamond: 310, price: 90 },
-            { id: 5, diamond: 512, price: 150 },
-            { id: 6, diamond: 690, price: 200 },
-            { id: 7, diamond: 1052, price: 300 },
-            { id: 8, diamond: 1801, price: 500 },
-            { id: 9, diamond: 3698, price: 1000 }
-        ];
-
-        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k';
-
-        let selectedPackages = new Set();
-        let isSubmitting = false;
-
-        const container = document.getElementById('packagesContainer');
-        const uidInput = document.getElementById('uidInput');
-        const uidError = document.getElementById('uidError');
-        const countEl = document.getElementById('selectedCount');
-        const priceEl = document.getElementById('totalPrice');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = document.getElementById('btnText');
-        const btnIcon = document.getElementById('btnIcon');
-        const btnSpinner = document.getElementById('btnSpinner');
-        const toastContainer = document.getElementById('toastContainer');
-
-        const format = (n) => new Intl.NumberFormat('th-TH').format(n);
-
-        function render() {
-            container.innerHTML = '';
-            packages.forEach(pkg => {
-                const card = document.createElement('button');
-                card.className = 'package-card relative group rounded-[1.5rem] p-4 flex flex-col items-center gap-2 overflow-hidden';
-                card.innerHTML = `
-                    <div class="absolute top-3 right-3 w-5 h-5 rounded-full border border-white/20 flex items-center justify-center bg-white/5 transition-colors check-dot">
-                    </div>
-                    <div class="p-2 rounded-2xl bg-white/5 group-hover:bg-blue-500/10 transition-colors">
-                        <i data-lucide="gem" class="w-7 h-7 text-blue-400"></i>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-lg font-bold text-white leading-tight">${format(pkg.diamond)} <span class="text-[10px] font-normal opacity-60 block">DIAMONDS</span></div>
-                        <div class="text-sm text-green-400 font-semibold mt-1">฿${format(pkg.price)}</div>
-                    </div>
-                `;
-                card.onclick = () => toggle(pkg.id, card);
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        function toggle(id, el) {
-            if (selectedPackages.has(id)) {
-                selectedPackages.delete(id);
-                el.classList.remove('selected');
-                el.querySelector('.check-dot').innerHTML = '';
-                el.querySelector('.check-dot').className = el.querySelector('.check-dot').className.replace('bg-blue-500', 'bg-white/5');
-            } else {
-                selectedPackages.add(id);
-                el.classList.add('selected');
-                el.querySelector('.check-dot').innerHTML = '<i data-lucide="check" class="w-3 h-3 text-white"></i>';
-                el.querySelector('.check-dot').className = el.querySelector('.check-dot').className.replace('bg-white/5', 'bg-blue-500 border-blue-500');
+function renderPackages() {
+    packagesContainer.innerHTML = '';
+    packages.forEach((pkg, idx)=>{
+        const div = document.createElement('div');
+        div.className='package-card relative';
+        div.setAttribute('data-idx',idx);
+        div.innerHTML=`
+            <div class="check-badge"><i data-lucide="check" class="w-3 h-3"></i></div>
+            <div>${pkg.name}</div>
+            <div>${pkg.price} บาท</div>
+        `;
+        div.onclick = ()=>{
+            const index = selectedPackages.indexOf(idx);
+            if(index>-1){
+                selectedPackages.splice(index,1);
+                div.classList.remove('selected');
+            }else{
+                selectedPackages.push(idx);
+                div.classList.add('selected');
             }
-            update();
-            lucide.createIcons();
-        }
-
-        function update() {
-            countEl.innerText = selectedPackages.size;
-            let total = 0;
-            selectedPackages.forEach(id => total += packages.find(p => p.id === id).price);
-            priceEl.innerText = format(total);
-            validate();
-        }
-
-        function validate() {
-            const uid = uidInput.value.trim();
-            const valid = /^\d{8,}$/.test(uid) && selectedPackages.size > 0 && !isSubmitting;
-            submitBtn.disabled = !valid;
-        }
-
-        uidInput.oninput = (e) => {
-            e.target.value = e.target.value.replace(/\D/g, '');
             validate();
         };
+        packagesContainer.appendChild(div);
+    });
+    lucide.createIcons();
+}
 
-        uidInput.onblur = () => {
-            if (uidInput.value.length > 0 && uidInput.value.length < 8) {
-                uidError.classList.remove('hidden');
-            } else {
-                uidError.classList.add('hidden');
-            }
-        };
+function validate(){
+    const uidValid = /^\d{8,}$/.test(uidInput.value);
+    const hasPackage = selectedPackages.length>0;
+    uidError.classList.toggle('hidden', uidValid);
+    submitBtn.disabled = !(uidValid && hasPackage);
+}
 
-        function showToast(msg, type = 'success') {
-            const t = document.createElement('div');
-            const bg = type === 'success' ? 'bg-emerald-500/90' : 'bg-red-500/90';
-            t.className = `flex items-center gap-3 px-6 py-4 rounded-2xl text-white shadow-2xl backdrop-blur-md animate-slide-up ${bg}`;
-            t.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-triangle'}" class="w-5 h-5"></i> <span class="font-medium">${msg}</span>`;
-            toastContainer.appendChild(t);
-            lucide.createIcons();
-            setTimeout(() => {
-                t.classList.add('animate-fade-out');
-                setTimeout(() => t.remove(), 300);
-            }, 3000);
-        }
+uidInput.oninput=validate;
 
-        submitBtn.onclick = async () => {
-            const uid = uidInput.value;
-            isSubmitting = true;
-            validate();
-            
-            btnText.innerText = 'กำลังส่งข้อมูล...';
-            btnIcon.classList.add('hidden');
-            btnSpinner.classList.remove('hidden');
+document.getElementById('orderForm').onsubmit=async(e)=>{
+    e.preventDefault();
+    submitBtn.disabled=true;
+    spinner.classList.remove('hidden');
 
-            let total = 0;
-            const items = Array.from(selectedPackages).map(id => {
-                const p = packages.find(x => x.id === id);
-                total += p.price;
-                return `• ${format(p.diamond)} Diamonds (฿${p.price})`;
-            }).join('\n');
+    const uid=uidInput.value;
+    let total=0;
+    const items=selectedPackages.map(i=>{
+        total+=packages[i].price;
+        return `• ${packages[i].name} (${packages[i].price} บาท)`;
+    }).join('\n');
 
-            const payload = {
-                username: "Nexus Topup Bot",
-                embeds: [{
-                    title: "🛒 รายการสั่งซื้อใหม่",
-                    color: 3447003,
-                    fields: [
-                        { name: "👤 Game UID", value: `\`${uid}\``, inline: true },
-                        { name: "💰 ยอดรวม", value: `**฿${format(total)}**`, inline: true },
-                        { name: "📦 รายละเอียด", value: items }
-                    ],
-                    timestamp: new Date().toISOString()
-                }]
-            };
+    const payload={
+        content:`📥 **New Order**\nUID: \`${uid}\`\nPackages:\n${items}\nTotal: ${total} บาท`
+    };
 
-            try {
-                const res = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+    try{
+        await fetch(webhookUrl,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(payload)
+        });
+        alert('ส่งคำสั่งซื้อเรียบร้อย! ระบบจะนำไปสู่หน้าชำระเงิน TrueMoney');
+        // Redirect ไป TrueMoney Wallet พร้อมยอดรวม
+        const trueMoneyUrl = `https://pay.truemoney.com/link/pay?amount=${total}`;
+        window.location.href = trueMoneyUrl;
+    }catch(err){
+        alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
+        console.error(err);
+    }finally{
+        submitBtn.disabled=false;
+        spinner.classList.add('hidden');
+    }
+};
 
-                if (res.ok) {
-                    showToast('สั่งซื้อสำเร็จ! โปรดรอเจ้าหน้าที่ดำเนินการ');
-                    uidInput.value = '';
-                    selectedPackages.clear();
-                    render();
-                    update();
-                } else {
-                    throw new Error();
-                }
-            } catch {
-                showToast('ขออภัย! ระบบขัดข้อง โปรดลองใหม่ภายหลัง', 'error');
-            } finally {
-                isSubmitting = false;
-                btnText.innerText = 'ยืนยันการสั่งซื้อ';
-                btnIcon.classList.remove('hidden');
-                btnSpinner.classList.add('hidden');
-                validate();
-            }
-        };
-
-        render();
-    </script>
+renderPackages();
+</script>
 </body>
 </html>
-
