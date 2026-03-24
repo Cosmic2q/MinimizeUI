@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus Topup Premium</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -17,39 +17,36 @@ body {
     display:flex;
     justify-content:center;
     align-items:center;
-    transition:background 0.5s ease;
+    transition:0.5s;
 }
 .main-card {
     background: rgba(15,23,42,0.6);
     backdrop-filter: blur(20px);
     border-radius:2rem;
-    width:100%;
-    max-width:800px;
     padding:2rem;
+    max-width:800px;
+    width:100%;
     color:#fff;
-    transition:all 0.4s ease;
 }
 .package-card {
     background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 1.5rem;
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:1.5rem;
     padding:1rem;
     text-align:center;
     cursor:pointer;
+    transition:0.3s;
     position:relative;
-    transition: all 0.3s ease, transform 0.2s ease;
 }
 .package-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    background: rgba(59,130,246,0.12);
-    border-color: rgba(59,130,246,0.3);
+    transform:translateY(-5px) scale(1.03);
+    background:rgba(59,130,246,0.15);
 }
 .package-card.selected {
-    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(147,51,234,0.15));
-    border-color: #3b82f6;
-    box-shadow: 0 10px 20px rgba(59,130,246,0.3);
+    border-color:#3b82f6;
+    box-shadow:0 10px 20px rgba(59,130,246,0.3);
 }
-.check-badge {
+.check {
     position:absolute;
     top:-6px;
     right:-6px;
@@ -61,211 +58,138 @@ body {
     align-items:center;
     justify-content:center;
     opacity:0;
-    transition:opacity 0.3s ease;
 }
-.package-card.selected .check-badge { opacity:1; }
-.glass-input {
-    background: rgba(0,0,0,0.3);
-    border:1px solid rgba(255,255,255,0.1);
-    color:white;
-    border-radius:1rem;
-    padding:0.75rem 1rem;
+.package-card.selected .check {opacity:1;}
+.fade {transition:0.4s;}
+.hidden {display:none;}
+input {
     width:100%;
-    transition: all 0.3s ease;
+    padding:10px;
+    border-radius:12px;
+    background:rgba(0,0,0,0.3);
+    border:1px solid rgba(255,255,255,0.1);
 }
-.glass-input:focus {
-    outline:none;
-    border-color:#3b82f6;
-    box-shadow:0 0 0 4px rgba(59,130,246,0.2);
-}
-button:disabled {
-    opacity:0.5;
-    cursor:not-allowed;
-}
-.fade {
-    transition: opacity 0.5s ease, transform 0.5s ease;
-}
-.fade.hidden { opacity:0; transform: translateY(20px); display:none; }
-.loader {
-    border:2px solid rgba(255,255,255,0.3);
-    border-radius:50%;
-    border-top:2px solid white;
-    width:18px;
-    height:18px;
-    animation:spin 0.8s linear infinite;
-}
-@keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+button:disabled {opacity:0.5;}
 </style>
 </head>
 <body>
 
 <div class="main-card">
 
-<!-- Step 1 -->
+<!-- STEP 1 -->
 <div id="step1" class="fade">
-    <h1 class="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Nexus Topup</h1>
-    <p class="text-center mb-6 text-gray-400">เลือกแพ็กเกจและกรอก UID ของคุณ (8 หลักขึ้นไป)</p>
+<h1 class="text-3xl text-center font-bold mb-4">Nexus Topup</h1>
 
-    <input type="text" id="uidInput" class="glass-input mb-4" placeholder="Game UID" maxlength="15">
-    <p id="uidError" class="text-red-400 text-sm mb-2 hidden">UID ต้องมี 8 หลักขึ้นไป</p>
+<input id="uid" placeholder="Game UID (8 หลักขึ้นไป)" class="mb-3">
+<p id="uidErr" class="text-red-400 text-sm hidden">UID ไม่ถูกต้อง</p>
 
-    <div id="packageGrid" class="grid grid-cols-2 gap-3 mb-6"></div>
+<div id="grid" class="grid grid-cols-2 gap-3 mb-5"></div>
 
-    <button id="nextBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold" disabled>ถัดไป</button>
+<button id="next" class="w-full bg-blue-600 py-2 rounded-lg" disabled>ถัดไป</button>
 </div>
 
-<!-- Step 2 -->
+<!-- STEP 2 -->
 <div id="step2" class="fade hidden">
-    <h2 class="text-2xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">สรุปคำสั่งซื้อ</h2>
-    <div class="mb-2">UID: <span id="summaryUID"></span></div>
-    <div class="mb-2">แพ็กเกจที่เลือก: <span id="summaryPackages"></span></div>
-    <div class="mb-4">รวมราคา: <span id="summaryPrice"></span> บาท</div>
+<h2 class="text-xl font-bold mb-3">สรุป</h2>
 
-    <input type="text" id="truemoneyLink" class="glass-input mb-4" placeholder="วางลิงก์ TrueMoney Wallet / อั่งเปา">
-    <p id="linkError" class="text-red-400 text-sm mb-2 hidden">กรุณาใส่ลิงก์ที่ถูกต้อง</p>
+<p>UID: <span id="s_uid"></span></p>
+<p>แพ็กเกจ: <span id="s_pkg"></span></p>
+<p class="mb-3">รวม: <span id="s_total"></span> บาท</p>
 
-    <button id="submitBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 font-bold flex justify-center items-center gap-2">
-        <span id="btnText">ส่งคำสั่งซื้อ</span>
-        <div id="btnSpinner" class="loader hidden"></div>
-    </button>
+<input id="link" placeholder="ลิงก์อั่งเปา TrueMoney">
+<p id="linkErr" class="text-red-400 text-sm hidden">ลิงก์ต้องเป็น https://gift.truemoney.com</p>
+
+<button id="send" class="w-full bg-green-600 py-2 rounded-lg mt-3">ส่งคำสั่งซื้อ</button>
 </div>
 
 </div>
 
 <script>
-lucide.createIcons();
-
 const packages=[
-    {name:'33 Diamonds',price:11},
-    {name:'68 Diamonds',price:21},
-    {name:'172 Diamonds',price:52},
-    {name:'310 Diamonds',price:90},
-    {name:'512 Diamonds',price:150},
-    {name:'690 Diamonds',price:200},
-    {name:'1,052 Diamonds',price:300},
-    {name:'1,801 Diamonds',price:500},
-    {name:'3,698 Diamonds',price:1000}
+["33 💎",11],["68 💎",21],["172 💎",52],
+["310 💎",90],["512 💎",150],["690 💎",200],
+["1052 💎",300],["1801 💎",500],["3698 💎",1000]
 ];
 
-const WEBHOOK_URL='https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k';
+const WEBHOOK="https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k";
 
-let selectedPackages=new Set();
-let isSubmitting=false;
+let selected=new Set();
 
-const uidInput=document.getElementById('uidInput');
-const uidError=document.getElementById('uidError');
-const packageGrid=document.getElementById('packageGrid');
-const nextBtn=document.getElementById('nextBtn');
-
-const step1=document.getElementById('step1');
-const step2=document.getElementById('step2');
-const summaryUID=document.getElementById('summaryUID');
-const summaryPackages=document.getElementById('summaryPackages');
-const summaryPrice=document.getElementById('summaryPrice');
-const truemoneyLink=document.getElementById('truemoneyLink');
-const linkError=document.getElementById('linkError');
-const submitBtn=document.getElementById('submitBtn');
-const btnText=document.getElementById('btnText');
-const btnSpinner=document.getElementById('btnSpinner');
-
-function format(n){return new Intl.NumberFormat('th-TH').format(n);}
-
-function renderPackages(){
-    packageGrid.innerHTML='';
-    packages.forEach((pkg,idx)=>{
-        const card=document.createElement('div');
-        card.className='package-card';
-        card.innerHTML=`
-            <div class="check-badge"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
-            <div class="font-bold">${pkg.name}</div>
-            <div class="text-green-400">฿${pkg.price}</div>
-        `;
-        card.onclick=()=>{
-            if(selectedPackages.has(idx)) selectedPackages.delete(idx);
-            else selectedPackages.add(idx);
-            updatePackageSelection();
-        };
-        packageGrid.appendChild(card);
-    });
-    lucide.createIcons();
-}
-
-function updatePackageSelection(){
-    const cards=document.querySelectorAll('.package-card');
-    cards.forEach((card,idx)=>{
-        if(selectedPackages.has(idx)) card.classList.add('selected');
-        else card.classList.remove('selected');
-    });
-    validateStep1();
-}
-
-function validateStep1(){
-    const uidValid=/^\d{8,}$/.test(uidInput.value.trim());
-    const packageValid=selectedPackages.size>0;
-    nextBtn.disabled=!(uidValid && packageValid);
-}
-
-uidInput.addEventListener('input',()=>{
-    if(/^\d{8,}$/.test(uidInput.value.trim())) uidError.classList.add('hidden');
-    else uidError.classList.remove('hidden');
-    validateStep1();
+const grid=document.getElementById('grid');
+packages.forEach((p,i)=>{
+    let div=document.createElement('div');
+    div.className='package-card';
+    div.innerHTML=`<div class="check">✓</div>${p[0]}<br>฿${p[1]}`;
+    div.onclick=()=>{
+        selected.has(i)?selected.delete(i):selected.add(i);
+        update();
+    };
+    grid.appendChild(div);
 });
 
-nextBtn.onclick=()=>{
+function update(){
+    [...grid.children].forEach((c,i)=>{
+        c.classList.toggle('selected',selected.has(i));
+    });
+    validate();
+}
+
+const uid=document.getElementById('uid');
+const next=document.getElementById('next');
+
+function validate(){
+    next.disabled = !(uid.value.length>=8 && selected.size>0);
+}
+
+uid.oninput=()=>{
+    document.getElementById('uidErr').classList.toggle('hidden',uid.value.length>=8);
+    validate();
+};
+
+next.onclick=()=>{
     step1.classList.add('hidden');
     step2.classList.remove('hidden');
-    document.body.style.background='linear-gradient(135deg,#1e293b,#111827)';
-    summaryUID.innerText=uidInput.value.trim();
-    const names=Array.from(selectedPackages).map(idx=>packages[idx].name).join(', ');
-    summaryPackages.innerText=names;
-    const total=Array.from(selectedPackages).reduce((acc,idx)=>acc+packages[idx].price,0);
-    summaryPrice.innerText=format(total);
+    document.body.style.background="linear-gradient(135deg,#1e293b,#020617)";
+
+    s_uid.innerText=uid.value;
+    let names=[...selected].map(i=>packages[i][0]).join(', ');
+    s_pkg.innerText=names;
+
+    let total=[...selected].reduce((a,i)=>a+packages[i][1],0);
+    s_total.innerText=total;
 };
 
-submitBtn.onclick=async()=>{
-    const link=truemoneyLink.value.trim();
-    if(!link.startsWith('https://')) { linkError.classList.remove('hidden'); return;}
-    linkError.classList.add('hidden');
+send.onclick=async()=>{
+    let link=document.getElementById('link').value.trim();
 
-    const total=Array.from(selectedPackages).reduce((acc,idx)=>acc+packages[idx].price,0);
-    const selectedList=Array.from(selectedPackages).map(idx=>`• ${packages[idx].name} (฿${packages[idx].price})`).join('\n');
-
-    const payload={
-        username:"Nexus Topup Bot",
-        embeds:[{
-            title:"🛒 รายการสั่งซื้อใหม่",
-            color:3447003,
-            fields:[
-                {name:"👤 Game UID",value:`\`${uidInput.value.trim()}\``,inline:true},
-                {name:"💰 ยอดรวม",value:`**฿${format(total)}**`,inline:true},
-                {name:"📦 รายละเอียดแพ็กเกจ",value:selectedList,inline:false},
-                {name:"🔗 ลิงก์ชำระเงิน",value:link,inline:false}
-            ],
-            timestamp:new Date().toISOString()
-        }]
-    };
-
-    submitBtn.disabled=true;
-    btnText.innerText='กำลังส่งข้อมูล...';
-    btnSpinner.classList.remove('hidden');
-
-    try{
-        const res=await fetch(WEBHOOK_URL,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify(payload)
-        });
-        if(res.ok) alert('ส่งคำสั่งซื้อเรียบร้อยแล้ว!');
-        else alert('เกิดข้อผิดพลาด!');
-    }catch(e){ alert('เกิดข้อผิดพลาด!');}
-    finally{
-        submitBtn.disabled=false;
-        btnText.innerText='ส่งคำสั่งซื้อ';
-        btnSpinner.classList.add('hidden');
+    if(!link.startsWith("https://gift.truemoney.com")){
+        linkErr.classList.remove('hidden');
+        return;
     }
-};
+    linkErr.classList.add('hidden');
 
-renderPackages();
+    let total=[...selected].reduce((a,i)=>a+packages[i][1],0);
+    let list=[...selected].map(i=>`${packages[i][0]} (฿${packages[i][1]})`).join("\n");
+
+    await fetch(WEBHOOK,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            embeds:[{
+                title:"🛒 New Order",
+                color:5814783,
+                fields:[
+                    {name:"UID",value:uid.value,inline:true},
+                    {name:"Total",value:total+" บาท",inline:true},
+                    {name:"Packages",value:list},
+                    {name:"Gift Link",value:link}
+                ]
+            }]
+        })
+    });
+
+    alert("ส่งเรียบร้อย!");
+};
 </script>
 
 </body>
