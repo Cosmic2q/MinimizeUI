@@ -3,218 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Top-Up Portal</title>
+<title>Nexus Topup - ระบบเติมเกม</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-body {
-    font-family: 'Kanit', sans-serif;
-    background: radial-gradient(circle at top right, rgba(99,102,241,0.15), transparent),
-                radial-gradient(circle at bottom left, rgba(79,70,229,0.1), transparent);
-    min-height: 100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#f8fafc;
-}
-.glass-card {
+  body { 
+    font-family: 'Kanit', sans-serif; 
+    background: radial-gradient(circle at top left, #1e293b, #020617); 
+    min-height:100vh; 
+    margin:0; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    transition: background 0.5s ease;
+  }
+  .glass-card {
     background: rgba(30,41,59,0.7);
     backdrop-filter: blur(12px);
-    border-radius:1.5rem;
-    padding:2rem;
+    border-radius: 1.5rem;
+    padding: 2rem;
     width:100%;
     max-width:600px;
-}
-.input-field {
-    background: rgba(15,23,42,0.6);
-    border:2px solid rgba(255,255,255,0.1);
-    border-radius:1rem;
-    padding:1rem;
-    width:100%;
-    color:white;
-}
-.input-field:focus {
-    outline:none;
-    border-color:#6366f1;
-    box-shadow:0 0 0 4px rgba(99,102,241,0.2);
-}
-.package-card {
+  }
+  .package-card {
     cursor:pointer;
     border:2px solid transparent;
     border-radius:1rem;
     padding:1rem;
-    text-align:center;
-    transition: all 0.2s ease;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
-.package-card:hover {
-    transform:translateY(-4px);
-    background: rgba(99,102,241,0.1);
-    border-color: rgba(99,102,241,0.3);
-}
-.package-card.selected {
-    border-color:#6366f1;
-    background: rgba(99,102,241,0.2);
-    box-shadow: 0 0 20px rgba(99,102,241,0.3);
-}
-.check-badge {
-    position:absolute;
-    top:-8px;
-    right:-8px;
-    background:#6366f1;
-    color:white;
-    border-radius:50%;
-    padding:2px;
-    display:none;
-}
-.package-card.selected .check-badge { display:block; }
-.btn-submit {
-    width:100%;
-    padding:1rem;
-    border-radius:1rem;
-    background:linear-gradient(135deg,#6366f1,#4f46e5);
-    font-weight:bold;
-    cursor:pointer;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-.btn-submit:disabled {
-    opacity:0.6;
-    cursor:not-allowed;
-}
-.spinner {
-    width:20px;
-    height:20px;
-    border:3px solid rgba(255,255,255,0.3);
-    border-top-color:#fff;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-    margin-left:0.5rem;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
+    transition:0.2s;
+  }
+  .package-card:hover { transform: translateY(-3px); border-color:#6366f1; background:rgba(99,102,241,0.1);}
+  .package-card.selected { border-color:#6366f1; background:rgba(99,102,241,0.2);}
+  .btn { background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; padding:.75rem 1rem; border-radius:1rem; font-weight:bold; cursor:pointer; transition:0.3s;}
+  .btn:disabled { opacity:0.6; cursor:not-allowed;}
+  .input-field { padding:.75rem 1rem; border-radius:1rem; border:2px solid rgba(255,255,255,0.1); background:rgba(15,23,42,0.6); color:white; width:100%; margin-bottom:.5rem;}
+  .input-field:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 4px rgba(99,102,241,0.2);}
+  .hidden { display:none; }
 </style>
 </head>
 <body>
-<div class="glass-card">
-    <h1 class="text-3xl font-bold mb-4 text-center">GAME TOP-UP</h1>
-    <form id="orderForm" class="space-y-4">
-        <div>
-            <label>Game UID (8 หลักขึ้นไป)</label>
-            <input type="text" id="uid" class="input-field" placeholder="กรอก UID ของคุณ...">
-            <p id="uidError" class="text-red-400 text-sm hidden">UID ต้องเป็นตัวเลขอย่างน้อย 8 หลัก</p>
-        </div>
-        <div>
-            <label>เลือกแพ็กเกจ (เลือกได้หลายรายการ)</label>
-            <div id="packageGrid" class="grid grid-cols-2 gap-2 mt-2">
-                <!-- Package Cards -->
-            </div>
-        </div>
-        <button type="submit" id="submitBtn" class="btn-submit" disabled>
-            ยืนยันคำสั่งซื้อ
-            <div id="spinner" class="spinner hidden"></div>
-        </button>
-    </form>
+
+<div class="glass-card" id="step1">
+  <h2 class="text-2xl font-bold mb-4">เลือกแพ็กเกจ</h2>
+  <div id="packageGrid" class="grid grid-cols-2 gap-3 mb-4">
+    <!-- แพ็กเกจจะถูกสร้างด้วย JS -->
+  </div>
+  <input type="text" id="uidInput" class="input-field" placeholder="กรอก UID 8 หลักขึ้นไป">
+  <p id="uidError" class="text-red-400 text-sm hidden">UID ต้องมีอย่างน้อย 8 หลัก</p>
+  <button id="toPayment" class="btn w-full mt-3" disabled>ไปหน้าจ่ายเงิน</button>
+</div>
+
+<div class="glass-card hidden" id="step2">
+  <h2 class="text-2xl font-bold mb-4">ชำระเงิน</h2>
+  <p class="mb-2">รายการที่เลือก:</p>
+  <ul id="summaryList" class="mb-4"></ul>
+  <p class="mb-2">ยอดรวม: <span id="totalAmount"></span> บาท</p>
+  <input type="text" id="tmLink" class="input-field" placeholder="วางลิ้ง TrueMoney Wallet / อั่งเปา">
+  <p id="tmError" class="text-red-400 text-sm hidden">กรุณาใส่ลิ้งที่ถูกต้อง</p>
+  <button id="submitOrder" class="btn w-full mt-3" disabled>ส่งคำสั่งซื้อ</button>
 </div>
 
 <script>
-lucide.createIcons();
+  lucide.createIcons();
 
-const packages = [
-    {name:'33 Diamonds',price:11},
-    {name:'68 Diamonds',price:21},
-    {name:'172 Diamonds',price:52},
-    {name:'310 Diamonds',price:90},
-    {name:'512 Diamonds',price:150},
-    {name:'690 Diamonds',price:200},
-    {name:'1,052 Diamonds',price:300},
-    {name:'1,801 Diamonds',price:500},
-    {name:'3,698 Diamonds',price:1000}
-];
+  const packages = [
+    {name:"33 Diamonds", price:11},
+    {name:"68 Diamonds", price:21},
+    {name:"172 Diamonds", price:52},
+    {name:"310 Diamonds", price:90},
+    {name:"512 Diamonds", price:150},
+    {name:"690 Diamonds", price:200},
+    {name:"1,052 Diamonds", price:300},
+    {name:"1,801 Diamonds", price:500},
+    {name:"3,698 Diamonds", price:1000}
+  ];
 
-const webhookUrl = 'https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k';
-const packagesContainer = document.getElementById('packageGrid');
-const uidInput = document.getElementById('uid');
-const uidError = document.getElementById('uidError');
-const submitBtn = document.getElementById('submitBtn');
-const spinner = document.getElementById('spinner');
+  const packageGrid = document.getElementById("packageGrid");
+  const uidInput = document.getElementById("uidInput");
+  const uidError = document.getElementById("uidError");
+  const toPayment = document.getElementById("toPayment");
+  const step1 = document.getElementById("step1");
+  const step2 = document.getElementById("step2");
+  const summaryList = document.getElementById("summaryList");
+  const totalAmount = document.getElementById("totalAmount");
+  const tmLink = document.getElementById("tmLink");
+  const tmError = document.getElementById("tmError");
+  const submitOrder = document.getElementById("submitOrder");
 
-let selectedPackages = [];
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k";
 
-function renderPackages() {
-    packagesContainer.innerHTML = '';
-    packages.forEach((pkg, idx)=>{
-        const div = document.createElement('div');
-        div.className='package-card relative';
-        div.setAttribute('data-idx',idx);
-        div.innerHTML=`
-            <div class="check-badge"><i data-lucide="check" class="w-3 h-3"></i></div>
-            <div>${pkg.name}</div>
-            <div>${pkg.price} บาท</div>
-        `;
-        div.onclick = ()=>{
-            const index = selectedPackages.indexOf(idx);
-            if(index>-1){
-                selectedPackages.splice(index,1);
-                div.classList.remove('selected');
-            }else{
-                selectedPackages.push(idx);
-                div.classList.add('selected');
-            }
-            validate();
-        };
-        packagesContainer.appendChild(div);
+  let selectedPackages = [];
+
+  function renderPackages(){
+    packageGrid.innerHTML = "";
+    packages.forEach((pkg, i)=>{
+      const div = document.createElement("div");
+      div.className="package-card";
+      div.innerHTML=`<div class="text-white font-bold">${pkg.name}</div><div class="text-green-400 font-semibold">${pkg.price} บาท</div>`;
+      div.onclick=()=>{
+        if(selectedPackages.includes(i)){ selectedPackages = selectedPackages.filter(x=>x!==i); div.classList.remove("selected"); }
+        else { selectedPackages.push(i); div.classList.add("selected"); }
+        validateStep1();
+      };
+      packageGrid.appendChild(div);
     });
-    lucide.createIcons();
-}
+  }
 
-function validate(){
+  function validateStep1(){
     const uidValid = /^\d{8,}$/.test(uidInput.value);
-    const hasPackage = selectedPackages.length>0;
-    uidError.classList.toggle('hidden', uidValid);
-    submitBtn.disabled = !(uidValid && hasPackage);
-}
+    if(!uidValid && uidInput.value.length>0) uidError.classList.remove("hidden");
+    else uidError.classList.add("hidden");
+    toPayment.disabled = !(uidValid && selectedPackages.length>0);
+  }
 
-uidInput.oninput=validate;
+  uidInput.addEventListener("input", validateStep1);
 
-document.getElementById('orderForm').onsubmit=async(e)=>{
-    e.preventDefault();
-    submitBtn.disabled=true;
-    spinner.classList.remove('hidden');
+  toPayment.onclick = ()=>{
+    // เปลี่ยนพื้นหลังเล็กน้อย
+    document.body.style.background = "radial-gradient(circle at top right, #4f46e5, #0f172a)";
+    // แสดงหน้าจ่ายเงิน
+    step1.classList.add("hidden");
+    step2.classList.remove("hidden");
 
-    const uid=uidInput.value;
-    let total=0;
-    const items=selectedPackages.map(i=>{
-        total+=packages[i].price;
-        return `• ${packages[i].name} (${packages[i].price} บาท)`;
-    }).join('\n');
+    // แสดงสรุปรายการ
+    summaryList.innerHTML = selectedPackages.map(i=>`<li>${packages[i].name} - ${packages[i].price} บาท</li>`).join("");
+    totalAmount.innerText = selectedPackages.reduce((sum,i)=>sum+packages[i].price,0);
 
-    const payload={
-        content:`📥 **New Order**\nUID: \`${uid}\`\nPackages:\n${items}\nTotal: ${total} บาท`
-    };
+    validateStep2();
+  };
 
-    try{
-        await fetch(webhookUrl,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify(payload)
-        });
-        alert('ส่งคำสั่งซื้อเรียบร้อย! ระบบจะนำไปสู่หน้าชำระเงิน TrueMoney');
-        // Redirect ไป TrueMoney Wallet พร้อมยอดรวม
-        const trueMoneyUrl = `https://pay.truemoney.com/link/pay?amount=${total}`;
-        window.location.href = trueMoneyUrl;
-    }catch(err){
-        alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
-        console.error(err);
-    }finally{
-        submitBtn.disabled=false;
-        spinner.classList.add('hidden');
+  function validateStep2(){
+    const url = tmLink.value.trim();
+    // ตรวจสอบว่าลิ้งเริ่มด้วย https:// หรือ tm.me หรือ truemoney
+    const urlValid = /^https?:\/\/.+/.test(url);
+    tmError.classList.toggle("hidden", urlValid || url==="");
+    submitOrder.disabled = !(urlValid && selectedPackages.length>0 && /^\d{8,}$/.test(uidInput.value));
+  }
+
+  tmLink.addEventListener("input", validateStep2);
+
+  submitOrder.onclick = async ()=>{
+    const uid = uidInput.value.trim();
+    const tm = tmLink.value.trim();
+    const items = selectedPackages.map(i=>`${packages[i].name} (${packages[i].price} บาท)`).join("\n");
+    const total = selectedPackages.reduce((sum,i)=>sum+packages[i].price,0);
+
+    const payload = { content:`📥 New Order\nUID: ${uid}\nPackages:\n${items}\nTotal: ${total} บาท\nPayment Link: ${tm}` };
+
+    try {
+      await fetch(WEBHOOK_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+      alert("ส่งคำสั่งซื้อเรียบร้อยแล้ว!");
+      location.reload();
+    } catch {
+      alert("เกิดข้อผิดพลาดในการส่งข้อมูล!");
     }
-};
+  };
 
-renderPackages();
+  renderPackages();
 </script>
+
 </body>
 </html>
