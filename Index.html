@@ -3,163 +3,253 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus Topup - ระบบเติมเกม</title>
+<title>Nexus Topup - พรีเมียม Top-up</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
+
 <style>
-  body { 
-    font-family: 'Kanit', sans-serif; 
-    background: radial-gradient(circle at top left, #1e293b, #020617); 
-    min-height:100vh; 
-    margin:0; 
-    display:flex; 
-    justify-content:center; 
-    align-items:center; 
+body {
+    font-family: 'Kanit', sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     transition: background 0.5s ease;
-  }
-  .glass-card {
-    background: rgba(30,41,59,0.7);
-    backdrop-filter: blur(12px);
-    border-radius: 1.5rem;
+}
+.main-card {
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2rem;
+    width: 100%;
+    max-width: 800px;
     padding: 2rem;
-    width:100%;
-    max-width:600px;
-  }
-  .package-card {
-    cursor:pointer;
-    border:2px solid transparent;
-    border-radius:1rem;
-    padding:1rem;
-    transition:0.2s;
-  }
-  .package-card:hover { transform: translateY(-3px); border-color:#6366f1; background:rgba(99,102,241,0.1);}
-  .package-card.selected { border-color:#6366f1; background:rgba(99,102,241,0.2);}
-  .btn { background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; padding:.75rem 1rem; border-radius:1rem; font-weight:bold; cursor:pointer; transition:0.3s;}
-  .btn:disabled { opacity:0.6; cursor:not-allowed;}
-  .input-field { padding:.75rem 1rem; border-radius:1rem; border:2px solid rgba(255,255,255,0.1); background:rgba(15,23,42,0.6); color:white; width:100%; margin-bottom:.5rem;}
-  .input-field:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 4px rgba(99,102,241,0.2);}
-  .hidden { display:none; }
+    color: #fff;
+    transition: all 0.3s ease;
+}
+.package-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 1.5rem;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+}
+.package-card:hover {
+    background: rgba(59,130,246,0.1);
+    transform: translateY(-4px);
+    border-color: rgba(59,130,246,0.3);
+}
+.package-card.selected {
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(147,51,234,0.15));
+    border-color: #3b82f6;
+    box-shadow: 0 10px 20px rgba(59,130,246,0.3);
+}
+.check-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #3b82f6;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.package-card.selected .check-badge {
+    display: flex;
+}
+.glass-input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    width: 100%;
+}
+.glass-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.loader {
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top: 2px solid white;
+    width: 18px;
+    height: 18px;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
 </style>
 </head>
 <body>
 
-<div class="glass-card" id="step1">
-  <h2 class="text-2xl font-bold mb-4">เลือกแพ็กเกจ</h2>
-  <div id="packageGrid" class="grid grid-cols-2 gap-3 mb-4">
-    <!-- แพ็กเกจจะถูกสร้างด้วย JS -->
-  </div>
-  <input type="text" id="uidInput" class="input-field" placeholder="กรอก UID 8 หลักขึ้นไป">
-  <p id="uidError" class="text-red-400 text-sm hidden">UID ต้องมีอย่างน้อย 8 หลัก</p>
-  <button id="toPayment" class="btn w-full mt-3" disabled>ไปหน้าจ่ายเงิน</button>
-</div>
+<div class="main-card">
+    <div id="step1">
+        <h1 class="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Nexus Topup</h1>
+        <p class="text-center mb-6 text-gray-400">เลือกแพ็กเกจและกรอก UID ของคุณ (8 หลักขึ้นไป)</p>
 
-<div class="glass-card hidden" id="step2">
-  <h2 class="text-2xl font-bold mb-4">ชำระเงิน</h2>
-  <p class="mb-2">รายการที่เลือก:</p>
-  <ul id="summaryList" class="mb-4"></ul>
-  <p class="mb-2">ยอดรวม: <span id="totalAmount"></span> บาท</p>
-  <input type="text" id="tmLink" class="input-field" placeholder="วางลิ้ง TrueMoney Wallet / อั่งเปา">
-  <p id="tmError" class="text-red-400 text-sm hidden">กรุณาใส่ลิ้งที่ถูกต้อง</p>
-  <button id="submitOrder" class="btn w-full mt-3" disabled>ส่งคำสั่งซื้อ</button>
+        <input type="text" id="uidInput" class="glass-input mb-4" placeholder="Game UID" maxlength="15">
+        <p id="uidError" class="text-red-400 text-sm mb-2 hidden">UID ต้องมี 8 หลักขึ้นไป</p>
+
+        <div id="packageGrid" class="grid grid-cols-2 gap-3 mb-6"></div>
+
+        <button id="nextBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold" disabled>ถัดไป</button>
+    </div>
+
+    <div id="step2" class="hidden">
+        <h2 class="text-2xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">สรุปคำสั่งซื้อ</h2>
+        <p class="mb-2">UID: <span id="summaryUID"></span></p>
+        <p class="mb-2">แพ็กเกจที่เลือก: <span id="summaryPackages"></span></p>
+        <p class="mb-4">รวมราคา: <span id="summaryPrice"></span> บาท</p>
+
+        <input type="text" id="truemoneyLink" class="glass-input mb-4" placeholder="วางลิงก์ TrueMoney Wallet / อั่งเปา">
+        <p id="linkError" class="text-red-400 text-sm mb-2 hidden">กรุณาใส่ลิงก์ที่ถูกต้อง</p>
+
+        <button id="submitBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 font-bold">ส่งคำสั่งซื้อ</button>
+    </div>
 </div>
 
 <script>
-  lucide.createIcons();
+lucide.createIcons();
 
-  const packages = [
-    {name:"33 Diamonds", price:11},
-    {name:"68 Diamonds", price:21},
-    {name:"172 Diamonds", price:52},
-    {name:"310 Diamonds", price:90},
-    {name:"512 Diamonds", price:150},
-    {name:"690 Diamonds", price:200},
-    {name:"1,052 Diamonds", price:300},
-    {name:"1,801 Diamonds", price:500},
-    {name:"3,698 Diamonds", price:1000}
-  ];
+const packages = [
+    {name: '33 Diamonds', price: 11},
+    {name: '68 Diamonds', price: 21},
+    {name: '172 Diamonds', price: 52},
+    {name: '310 Diamonds', price: 90},
+    {name: '512 Diamonds', price: 150},
+    {name: '690 Diamonds', price: 200},
+    {name: '1,052 Diamonds', price: 300},
+    {name: '1,801 Diamonds', price: 500},
+    {name: '3,698 Diamonds', price: 1000}
+];
 
-  const packageGrid = document.getElementById("packageGrid");
-  const uidInput = document.getElementById("uidInput");
-  const uidError = document.getElementById("uidError");
-  const toPayment = document.getElementById("toPayment");
-  const step1 = document.getElementById("step1");
-  const step2 = document.getElementById("step2");
-  const summaryList = document.getElementById("summaryList");
-  const totalAmount = document.getElementById("totalAmount");
-  const tmLink = document.getElementById("tmLink");
-  const tmError = document.getElementById("tmError");
-  const submitOrder = document.getElementById("submitOrder");
+const WEBHOOK_URL = 'https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k';
 
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1372904210370265259/p-Z-klz9ywB-WpHuvrPCjPRt23me00hA_cC2Jh1XHLtNUvLHFG0c4khAbWe4jGO04s-k";
+let selectedPackages = new Set();
 
-  let selectedPackages = [];
+const uidInput = document.getElementById('uidInput');
+const uidError = document.getElementById('uidError');
+const packageGrid = document.getElementById('packageGrid');
+const nextBtn = document.getElementById('nextBtn');
 
-  function renderPackages(){
-    packageGrid.innerHTML = "";
-    packages.forEach((pkg, i)=>{
-      const div = document.createElement("div");
-      div.className="package-card";
-      div.innerHTML=`<div class="text-white font-bold">${pkg.name}</div><div class="text-green-400 font-semibold">${pkg.price} บาท</div>`;
-      div.onclick=()=>{
-        if(selectedPackages.includes(i)){ selectedPackages = selectedPackages.filter(x=>x!==i); div.classList.remove("selected"); }
-        else { selectedPackages.push(i); div.classList.add("selected"); }
-        validateStep1();
-      };
-      packageGrid.appendChild(div);
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const summaryUID = document.getElementById('summaryUID');
+const summaryPackages = document.getElementById('summaryPackages');
+const summaryPrice = document.getElementById('summaryPrice');
+const truemoneyLink = document.getElementById('truemoneyLink');
+const linkError = document.getElementById('linkError');
+const submitBtn = document.getElementById('submitBtn');
+
+function format(n){ return new Intl.NumberFormat('th-TH').format(n); }
+
+function renderPackages() {
+    packageGrid.innerHTML = '';
+    packages.forEach((pkg, idx) => {
+        const card = document.createElement('div');
+        card.className = 'package-card';
+        card.innerHTML = `
+            <div class="check-badge"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+            <div class="font-bold">${pkg.name}</div>
+            <div class="text-green-400">฿${pkg.price}</div>
+        `;
+        card.onclick = () => {
+            if(selectedPackages.has(idx)) selectedPackages.delete(idx);
+            else selectedPackages.add(idx);
+            updatePackageSelection();
+        };
+        packageGrid.appendChild(card);
     });
-  }
+    lucide.createIcons();
+}
 
-  function validateStep1(){
-    const uidValid = /^\d{8,}$/.test(uidInput.value);
-    if(!uidValid && uidInput.value.length>0) uidError.classList.remove("hidden");
-    else uidError.classList.add("hidden");
-    toPayment.disabled = !(uidValid && selectedPackages.length>0);
-  }
+function updatePackageSelection() {
+    const cards = document.querySelectorAll('.package-card');
+    cards.forEach((card, idx) => {
+        if(selectedPackages.has(idx)) card.classList.add('selected');
+        else card.classList.remove('selected');
+    });
+    validateStep1();
+}
 
-  uidInput.addEventListener("input", validateStep1);
+function validateStep1() {
+    const uidValid = /^\d{8,}$/.test(uidInput.value.trim());
+    const packageValid = selectedPackages.size > 0;
+    nextBtn.disabled = !(uidValid && packageValid);
+}
 
-  toPayment.onclick = ()=>{
-    // เปลี่ยนพื้นหลังเล็กน้อย
-    document.body.style.background = "radial-gradient(circle at top right, #4f46e5, #0f172a)";
-    // แสดงหน้าจ่ายเงิน
-    step1.classList.add("hidden");
-    step2.classList.remove("hidden");
+uidInput.addEventListener('input', () => {
+    if(/^\d{8,}$/.test(uidInput.value.trim())) uidError.classList.add('hidden');
+    else uidError.classList.remove('hidden');
+    validateStep1();
+});
 
-    // แสดงสรุปรายการ
-    summaryList.innerHTML = selectedPackages.map(i=>`<li>${packages[i].name} - ${packages[i].price} บาท</li>`).join("");
-    totalAmount.innerText = selectedPackages.reduce((sum,i)=>sum+packages[i].price,0);
+nextBtn.onclick = () => {
+    // Go to step 2
+    step1.classList.add('hidden');
+    step2.classList.remove('hidden');
+    document.body.style.background = 'linear-gradient(135deg, #1e293b, #111827)';
+    summaryUID.innerText = uidInput.value.trim();
+    const names = Array.from(selectedPackages).map(idx => packages[idx].name).join(', ');
+    summaryPackages.innerText = names;
+    const total = Array.from(selectedPackages).reduce((acc, idx) => acc+packages[idx].price,0);
+    summaryPrice.innerText = format(total);
+};
 
-    validateStep2();
-  };
+submitBtn.onclick = async () => {
+    const link = truemoneyLink.value.trim();
+    if(!link.startsWith('https://')) { 
+        linkError.classList.remove('hidden'); 
+        return; 
+    }
+    linkError.classList.add('hidden');
 
-  function validateStep2(){
-    const url = tmLink.value.trim();
-    // ตรวจสอบว่าลิ้งเริ่มด้วย https:// หรือ tm.me หรือ truemoney
-    const urlValid = /^https?:\/\/.+/.test(url);
-    tmError.classList.toggle("hidden", urlValid || url==="");
-    submitOrder.disabled = !(urlValid && selectedPackages.length>0 && /^\d{8,}$/.test(uidInput.value));
-  }
+    const payload = {
+        content: `📥 **New Order**\nUID: ${uidInput.value.trim()}\nPackages: ${summaryPackages.innerText}\nTotal: ${summaryPrice.innerText} THB\nPayment Link: ${link}`
+    };
 
-  tmLink.addEventListener("input", validateStep2);
-
-  submitOrder.onclick = async ()=>{
-    const uid = uidInput.value.trim();
-    const tm = tmLink.value.trim();
-    const items = selectedPackages.map(i=>`${packages[i].name} (${packages[i].price} บาท)`).join("\n");
-    const total = selectedPackages.reduce((sum,i)=>sum+packages[i].price,0);
-
-    const payload = { content:`📥 New Order\nUID: ${uid}\nPackages:\n${items}\nTotal: ${total} บาท\nPayment Link: ${tm}` };
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'กำลังส่งข้อมูล...';
 
     try {
-      await fetch(WEBHOOK_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-      alert("ส่งคำสั่งซื้อเรียบร้อยแล้ว!");
-      location.reload();
-    } catch {
-      alert("เกิดข้อผิดพลาดในการส่งข้อมูล!");
+        const res = await fetch(WEBHOOK_URL,{
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) alert('ส่งคำสั่งซื้อเรียบร้อยแล้ว!');
+        else alert('เกิดข้อผิดพลาด!');
+    } catch(e) {
+        alert('เกิดข้อผิดพลาด!');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'ส่งคำสั่งซื้อ';
     }
-  };
+};
 
-  renderPackages();
+renderPackages();
 </script>
 
 </body>
