@@ -1,1 +1,269 @@
-test
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REAPER X MOD | Minimal Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-lua.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+        :root {
+            --bg-main: #060912;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --text-main: #f1f5f9;
+            --input-bg: rgba(2, 6, 23, 0.8);
+            --accent: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Fredoka', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Ambient Background Mesh Glows */
+        .glow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0f172a 0%, #060912 100%);
+        }
+
+        .glow-sphere {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: moveAround 25s infinite alternate ease-in-out;
+        }
+
+        .sphere-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #ef4444 0%, transparent 70%);
+            top: -10%;
+            left: -10%;
+            animation-duration: 18s;
+        }
+
+        .sphere-2 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+            bottom: -15%;
+            right: -5%;
+            animation-duration: 22s;
+            animation-delay: -5s;
+        }
+
+        .sphere-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+            top: 40%;
+            right: 15%;
+            animation-duration: 15s;
+            animation-delay: -2s;
+        }
+
+        @keyframes moveAround {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(10vw, 5vh) scale(1.1); }
+            66% { transform: translate(-5vw, 15vh) scale(0.9); }
+            100% { transform: translate(5vw, -10vh) scale(1.05); }
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .custom-input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px 20px;
+            transition: all 0.3s ease;
+            color: var(--text-main);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(15, 23, 42, 0.9);
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #ef4444, #991b1b);
+            color: white;
+            border-radius: 18px;
+            font-weight: 700;
+            padding: 16px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 20px -5px rgba(239, 68, 68, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px -5px rgba(239, 68, 68, 0.5);
+            filter: brightness(1.1);
+        }
+
+        #toast {
+            visibility: hidden;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(255, 255, 255, 0.9);
+            color: #0f172a;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        #toast.show {
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        pre[class*="language-"] {
+            border-radius: 20px !important;
+            margin: 0 !important;
+            background: rgba(2, 6, 23, 0.6) !important;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* สไตล์เสริมสำหรับหัวข้อเพื่อให้ดูห่างกันแบบสมดุล */
+        .brand-title {
+            letter-spacing: 0.15em;
+        }
+        .brand-title span {
+            margin: 0 0.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Animated Mesh Background -->
+    <div class="glow-container">
+        <div class="glow-sphere sphere-1"></div>
+        <div class="glow-sphere sphere-2"></div>
+        <div class="glow-sphere sphere-3"></div>
+    </div>
+
+    <main class="w-full max-w-lg space-y-6 relative z-10">
+        <header class="text-center">
+            <h1 class="brand-title text-4xl font-extrabold tracking-[0.2em] mb-2 uppercase flex items-center justify-center">
+                <span class="text-white">REAPER</span> 
+                <span class="text-red-500 mx-4">X</span> 
+                <span class="text-white">MOD</span>
+            </h1>
+        </header>
+
+        <section class="glass-card p-6 md:p-8 space-y-6">
+            <div class="space-y-3">
+                <label class="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1 text-red-300">Script URL Source</label>
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="Enter your script URL here..."
+                    class="custom-input w-full text-sm"
+                >
+                <p id="errorBox" class="hidden text-rose-400 text-[10px] font-bold px-1">
+                    * Please use a secure URL (https://)
+                </p>
+            </div>
+
+            <button onclick="forgeScript()" class="btn-action w-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </button>
+        </section>
+
+        <div id="outputArea" class="hidden animate-in fade-in zoom-in-95 duration-500">
+            <div class="glass-card p-5 border-red-500/20">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <span class="text-[10px] font-black text-red-500 uppercase tracking-widest">Loadstring Result</span>
+                    <button onclick="copyOutput()" class="p-2 hover:bg-white/10 rounded-lg transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    </button>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-white/5">
+                    <pre><code id="codeResult" class="language-lua"></code></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast">Code copied successfully! ✨</div>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const errorBox = document.getElementById('errorBox');
+        const outputArea = document.getElementById('outputArea');
+        const codeResult = document.getElementById('codeResult');
+
+        function forgeScript() {
+            const val = urlInput.value.trim();
+            if(!val.startsWith('https://')) {
+                errorBox.classList.remove('hidden');
+                urlInput.style.borderColor = '#f43f5e';
+                return;
+            }
+            
+            errorBox.classList.add('hidden');
+            urlInput.style.borderColor = '';
+
+            const script = `loadstring(game:HttpGet("${val}"))()`;
+            codeResult.textContent = script;
+            Prism.highlightElement(codeResult);
+            outputArea.classList.remove('hidden');
+        }
+
+        function copyOutput() {
+            const text = codeResult.textContent;
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
