@@ -2,501 +2,535 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reaper Code | AI Assistant</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Raw Share - เครื่องมือแชร์โค้ดและข้อความดิบ</title>
+    <!-- Tailwind CSS for Beautiful Modern UI -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- CodeMirror Core & Theme -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
-    
-    <!-- Markdown & Highlight.js -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/tokyo-night-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-    
+    <!-- Firebase SDK Libraries (สำหรับฟังก์ชันเก็บข้อมูลขึ้น Cloud ถ้าต้องการ) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // กำหนดค่า Firebase Config เผื่อกรณีที่คุณต้องการเชื่อมต่อ Firestore Database ในอนาคต
+        // หากต้องการใช้งาน Cloud Saving จริง ให้แก้ค่าด้านล่างนี้ และตั้งค่า Firestore Security Rules
+        const firebaseConfig = {
+            apiKey: "", // ใส่ API Key ของคุณที่นี่
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // ตรวจสอบความถูกต้องและเริ่มใช้งาน Firebase (ทำงานแบบปลอดภัย หากยังไม่ได้กรอก config)
+        let db = null;
+        let auth = null;
+        let isFirebaseActive = false;
+
+        if (firebaseConfig.apiKey) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                isFirebaseActive = true;
+                
+                // ลงชื่อเข้าใช้งานแบบนิรนามอัตโนมัติ เพื่อสิทธิ์เข้าถึงฐานข้อมูลอย่างปลอดภัย
+                signInAnonymously(auth).catch((error) => console.warn("Firebase Auth Error:", error));
+            } catch (e) {
+                console.error("Firebase Initialization Failed:", e);
+            }
+        }
+        
+        window.db = db;
+        window.isFirebaseActive = isFirebaseActive;
+    </script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Prompt:wght@300;400;600&display=swap');
-        
-        :root {
-            --primary: #3b82f6;
-            --primary-glow: rgba(59, 130, 246, 0.5);
-            --bg-dark: #020617;
-            --panel-bg: rgba(15, 23, 42, 0.65);
-        }
-
         body {
-            font-family: 'Plus Jakarta Sans', 'Prompt', sans-serif;
-            background-color: var(--bg-dark);
-            color: #f1f5f9;
-            overflow: hidden;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            padding: 1rem;
+            font-family: 'Noto Sans Thai', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .code-font {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
         }
 
-        @media (max-width: 768px) {
-            body { padding: 0.5rem; }
-            header { flex-direction: column; gap: 1rem; padding: 1rem; }
-            #urlInput { width: 100%; }
-            .sidebar-panel.active { width: 100%; margin-left: 0; position: fixed; inset: 0; z-index: 60; border-radius: 0; }
-        }
-
-        /* --- RGB BACKGROUND LAYER --- */
-        .rgb-bg-container {
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            z-index: -1;
-            background: linear-gradient(
-                45deg, 
-                #0f172a, 
-                #1e1b4b, 
-                #312e81, 
-                #1e3a8a, 
-                #1e1b4b, 
-                #0f172a
-            );
-            background-size: 400% 400%;
-            animation: gradient-flow 15s ease infinite;
-        }
-
-        .rgb-glow-ball {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.4;
-            z-index: -1;
-        }
-
-        .ball-1 { background: #3b82f6; top: 10%; left: 10%; animation: move 20s infinite; }
-        .ball-2 { background: #8b5cf6; bottom: 10%; right: 10%; animation: move 25s infinite reverse; }
-        .ball-3 { background: #10b981; top: 40%; right: 20%; animation: move 18s infinite 2s; }
-
-        @keyframes gradient-flow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes move {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(100px, 50px); }
-            100% { transform: translate(0, 0); }
-        }
-
-        /* --- Glassmorphism --- */
-        .glass-panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .CodeMirror {
+        /* สไตล์สำหรับโหมด Raw ดิบๆ ไร้การปรุงแต่ง */
+        body.raw-layout {
+            background-color: #ffffff !important;
+            color: #000000 !important;
             font-family: 'Fira Code', monospace !important;
-            font-size: 14px;
-            flex-grow: 1;
-            height: 100% !important;
-            background: transparent !important;
-        }
-
-        .CodeMirror-gutters {
-            background: rgba(15, 23, 42, 0.3) !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-        }
-
-        .highlight-line {
-            background: rgba(59, 130, 246, 0.25) !important;
-            border-left: 4px solid var(--primary);
-        }
-
-        .sidebar-panel {
-            transition: all 0.3s ease;
-            width: 0;
-            opacity: 0;
-            display: none;
-        }
-
-        .sidebar-panel.active {
-            display: flex;
-            width: 450px;
-            opacity: 1;
-            margin-left: 1rem;
-        }
-
-        .chat-input-wrapper {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.25rem;
-            padding: 0.5rem;
-        }
-        
-        #chatInput {
-            background: transparent;
-            border: none;
-            outline: none;
-            color: white;
-            padding: 0.5rem 0.75rem;
-            resize: none;
-            max-height: 150px;
-            min-height: 44px;
-            font-size: 14px;
-            width: 100%;
+            margin: 0 !important;
+            padding: 16px !important;
             line-height: 1.5;
+            font-size: 14px;
         }
-
-        .msg-user { background: rgba(59, 130, 246, 0.2); border-radius: 1.25rem 1.25rem 0 1.25rem; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .msg-ai { background: rgba(30, 41, 59, 0.5); border-radius: 1.25rem 1.25rem 1.25rem 0; border: 1px solid rgba(255, 255, 255, 0.1); }
-        
-        .prose code { background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 4px; color: #60a5fa; }
-        .prose pre { background: #1a1b26; padding: 1rem; border-radius: 0.75rem; margin: 0.5rem 0; overflow-x: auto; position: relative; }
-
-        .chat-copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(255,255,255,0.1);
-            color: #94a3b8;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            text-transform: uppercase;
-            font-weight: bold;
-            transition: all 0.2s;
-            z-index: 10;
+        body.raw-layout pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
-        .chat-copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
-
-        .input-cyber {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        ::-webkit-scrollbar { width: 8px; height: 8px;}
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="flex flex-col">
+<body class="min-h-screen flex flex-col">
 
-    <div class="rgb-bg-container">
-        <div class="rgb-glow-ball ball-1"></div>
-        <div class="rgb-glow-ball ball-2"></div>
-        <div class="rgb-glow-ball ball-3"></div>
+    <!-- ========================================== -->
+    <!-- 1. หน้าแอปพลิเคชันหลัก (Editor Mode) -->
+    <!-- ========================================== -->
+    <div id="editor-view" class="flex flex-col flex-grow">
+        <!-- Navigation Bar -->
+        <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2.5 rounded-lg flex items-center justify-center text-white">
+                    <i class="fa-solid fa-code text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-wide">RAW PASTEBIN</h1>
+                    <p class="text-xs text-slate-400">เก็บข้อมูลและแชร์ข้อมูลดิบแบบทันใจ</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="clearEditor()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i> ล้างหน้าจอ
+                </button>
+                <div class="h-6 w-px bg-slate-800 mx-2"></div>
+                <span id="cloud-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">
+                    <i class="fa-solid fa-cloud-slash mr-1"></i> Local Only
+                </span>
+            </div>
+        </nav>
+
+        <!-- Main Workspace -->
+        <main class="flex-grow flex flex-col lg:flex-row p-6 gap-6 max-w-7xl w-full mx-auto">
+            <!-- Left Side: Editor Area -->
+            <div class="flex-grow flex flex-col bg-slate-900 rounded-xl border border-slate-800 shadow-2xl overflow-hidden min-h-[450px]">
+                <!-- Editor Header -->
+                <div class="bg-slate-950/60 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs text-slate-400 ml-2 font-mono">index.txt</span>
+                    </div>
+                    <span id="char-count" class="text-xs text-slate-500 font-mono">0 ตัวอักษร</span>
+                </div>
+                <!-- Text Area Input -->
+                <div class="flex-grow flex relative">
+                    <!-- Line Numbers Display -->
+                    <div id="line-numbers" class="w-12 bg-slate-950/30 text-right pr-3 pt-4 select-none text-slate-600 font-mono text-sm border-r border-slate-800/50 leading-6">
+                        1
+                    </div>
+                    <!-- Real Textarea -->
+                    <textarea id="editor" oninput="handleInput()" placeholder="พิมพ์ หรือวางข้อมูลที่นี่เพื่อแชร์..." class="flex-grow bg-transparent p-4 outline-none resize-none text-slate-100 code-font text-sm leading-6 placeholder:text-slate-600"></textarea>
+                </div>
+            </div>
+
+            <!-- Right Side: Action Control Panel -->
+            <div class="w-full lg:w-80 flex flex-col gap-5">
+                <!-- Share options -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                    <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-share-nodes text-blue-500"></i> เลือกรูปแบบการแชร์
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Option 1: URL Share (No database required) -->
+                        <div class="p-4 bg-slate-950/40 border border-slate-800 hover:border-slate-700 rounded-lg transition">
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">แชร์ผ่านลิงก์ทันที (Base64)</h4>
+                            <p class="text-xs text-slate-500 mb-3">เข้ารหัสข้อมูลลงใน URL โดยตรง ไม่พึ่งพาคลาวด์ เหมาะสำหรับข้อมูลขนาดสั้น</p>
+                            <button onclick="generateUrlLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-link"></i> สร้างลิงก์ Base64
+                            </button>
+                        </div>
+
+                        <!-- Option 2: Cloud Database Storage -->
+                        <div class="p-4 bg-slate-950/40 border border-slate-800 hover:border-slate-700 rounded-lg transition relative overflow-hidden" id="cloud-card">
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">บันทึกผ่านคลาวด์ (Cloud Save)</h4>
+                            <p class="text-xs text-slate-500 mb-3">บันทึกข้อความเก็บไว้ในฐานข้อมูล เหมาะกับโค้ดหรือข้อความขนาดยาว</p>
+                            <button id="cloud-save-btn" onclick="saveToCloud()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 cursor-not-allowed" disabled>
+                                <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกข้อมูลขึ้นคลาวด์
+                            </button>
+                            <!-- Alert overlay if Firebase is not configured -->
+                            <div id="firebase-notice" class="absolute inset-0 bg-slate-950/90 backdrop-blur-[1px] p-4 flex flex-col justify-center items-center text-center">
+                                <p class="text-xs text-slate-300 font-medium mb-1">ต้องการเปิดฟังก์ชันคลาวด์?</p>
+                                <p class="text-[10px] text-slate-500 max-w-[180px] mb-2">แก้ไขโค้ดใส่ Firebase Config เพื่อเก็บข้อมูลแบบถาวรได้</p>
+                                <span class="px-2 py-0.5 bg-slate-800 text-[9px] rounded text-slate-400">ทำงานแบบออฟไลน์แชร์ URL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info panel -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg text-xs text-slate-400 space-y-3">
+                    <h3 class="font-bold text-slate-200">💡 วิธีใช้งานแชร์แบบ RAW</h3>
+                    <p>เมื่อสร้างลิงก์และแชร์ออกไป ผู้ใช้ที่กดเข้ามาจะเจอกับหน้าจอ **Raw Text** ดิบ ๆ โดยไม่เห็นเครื่องมือจัดการใด ๆ เพื่อความรวดเร็วและเป็นส่วนตัว</p>
+                    <p class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2">พัฒนาไว้ในรูปโครงสร้างไฟล์เดียว (Single File) สะดวกในการนำไป Deploy บน Netlify ฟรี</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-950/60 border-t border-slate-900 py-4 text-center text-xs text-slate-500 mt-auto">
+            © 2026 Instant Raw Pastebin. โฮสต์ฟรีบน Netlify ได้ทันทีในคลิกเดียว.
+        </footer>
     </div>
 
-    <header class="mb-4 flex items-center justify-between glass-panel p-3 rounded-2xl flex-shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <i class="fas fa-terminal text-white text-sm"></i>
+    <!-- ========================================== -->
+    <!-- 2. ส่วนสำหรับ Pop-up Modal แจ้งผลลัพธ์การแชร์ -->
+    <!-- ========================================== -->
+    <div id="share-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="bg-emerald-500/15 text-emerald-400 p-2.5 rounded-lg">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">สร้างลิงก์แชร์เสร็จแล้ว!</h3>
+                    <p class="text-xs text-slate-400">เลือกคัดลอกลิงก์ประเภทต่าง ๆ ตามที่ใช้งาน</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-sm font-bold text-white leading-tight">Reaper Store</h1>
-                <p class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold hidden md:block">Project Reaper</p>
-            </div>
-        </div>
 
-        <div class="flex items-center gap-2">
-            <input id="urlInput" type="text" placeholder="Paste URL..." class="input-cyber text-white rounded-lg px-3 py-2 text-xs w-32 md:w-64 outline-none">
-            <button onclick="fetchCode()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">Load</button>
-            <div class="h-6 w-px bg-white/10 mx-1"></div>
-            
-            <div class="relative flex items-center gap-1">
-                <input id="lineSearchInput" type="number" placeholder="Line..." class="input-cyber text-white rounded-lg px-3 py-2 text-xs w-20 outline-none">
-                <button onclick="goToLine()" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-lg transition-all border border-blue-500/20">
-                    <i class="fas fa-crosshairs text-xs"></i>
+            <!-- Link boxes inside modal -->
+            <div class="space-y-4 my-6">
+                <!-- 1. Raw Link -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">1. ลิงก์ดูแบบ RAW ดิบล้วนๆ 📄</label>
+                    <div class="flex gap-2">
+                        <input id="raw-link-input" type="text" readonly class="flex-grow bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 select-all outline-none">
+                        <button onclick="copyToClipboard('raw-link-input')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-4 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0">
+                            <i class="fa-regular fa-copy"></i> คัดลอก
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Editor Link (Optional for preview mode) -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">2. ลิงก์หน้ามีดีไซน์ปกติ 🎨</label>
+                    <div class="flex gap-2">
+                        <input id="normal-link-input" type="text" readonly class="flex-grow bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-blue-400 select-all outline-none">
+                        <button onclick="copyToClipboard('normal-link-input')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-4 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0">
+                            <i class="fa-regular fa-copy"></i> คัดลอก
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 justify-end pt-2 border-t border-slate-800/60">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
+                    ปิดหน้าต่าง
                 </button>
             </div>
         </div>
-    </header>
-
-    <main class="flex-1 flex overflow-hidden min-h-0">
-        <section class="flex-1 flex flex-col glass-panel rounded-2xl overflow-hidden relative min-h-0">
-            <div class="bg-white/5 px-4 py-3 border-b border-white/5 flex justify-between items-center flex-shrink-0">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></div>
-                    <span id="lineCount" class="text-[10px] font-mono text-slate-300 uppercase tracking-widest">REAPER CODEX | 0 LINES</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button onclick="copyCode()" class="text-slate-400 hover:text-white text-[10px] uppercase font-bold transition-all"><i class="far fa-copy"></i> Copy All</button>
-                    <button onclick="downloadCode()" class="text-slate-400 hover:text-blue-400 text-[10px] uppercase font-bold transition-all"><i class="fas fa-download"></i> Download</button>
-                    <button onclick="showClearModal()" class="text-slate-400 hover:text-red-400 text-[10px] uppercase font-bold transition-all"><i class="fas fa-trash-alt"></i> Reset</button>
-                </div>
-            </div>
-            <div class="editor-container" id="editorWrap">
-                <textarea id="codeEditor"></textarea>
-            </div>
-        </section>
-
-        <aside id="sidebar" class="sidebar-panel flex flex-col glass-panel rounded-2xl overflow-hidden min-h-0">
-            <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5 flex-shrink-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                        <i class="fas fa-ghost text-blue-400 text-sm"></i>
-                    </div>
-                    <h2 class="text-xs font-bold text-white uppercase tracking-widest">Assistant</h2>
-                </div>
-                <button onclick="toggleSidebar()" class="text-slate-400 p-2 hover:text-white transition-all"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth"></div>
-
-            <div id="aiThinking" class="hidden px-4 py-2 text-[10px] text-blue-400 animate-pulse flex-shrink-0"><i class="fas fa-circle-notch fa-spin mr-2"></i>Thinking...</div>
-
-            <div class="p-4 border-t border-white/5 bg-black/40 flex-shrink-0">
-                <div class="chat-input-wrapper flex items-end gap-2">
-                    <textarea id="chatInput" rows="1" placeholder="พิมพ์ข้อความ..." oninput="autoResize(this)"></textarea>
-                    <button onclick="sendChatMessage()" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 flex items-center justify-center flex-shrink-0 mb-1 shadow-lg shadow-blue-600/20 transition-all">
-                        <i class="fas fa-paper-plane text-white text-sm"></i>
-                    </button>
-                </div>
-            </div>
-        </aside>
-    </main>
-
-    <button onclick="toggleSidebar()" id="chatToggleButton" class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-xl flex items-center justify-center z-50 transition-all hover:scale-110">
-        <i class="fas fa-comment-alt"></i>
-    </button>
-
-    <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeClearModal()"></div>
-        <div class="glass-panel p-8 rounded-[2rem] relative max-w-sm w-full text-center">
-            <h3 class="text-xl font-bold text-white mb-2">Initialize Purge?</h3>
-            <p class="text-slate-300 text-sm mb-8">This will clear the workspace.</p>
-            <div class="flex gap-4">
-                <button onclick="closeClearModal()" class="flex-1 py-3 bg-white/5 text-white rounded-xl text-xs font-bold">Abort</button>
-                <button onclick="confirmClearCode()" class="flex-1 py-3 bg-red-600 text-white rounded-xl text-xs font-bold">Confirm</button>
-            </div>
-        </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/lua/lua.min.js"></script>
+    <!-- Toast Notification system for micro-interactions -->
+    <div id="toast" class="opacity-0 pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/95 border border-slate-800 text-slate-200 px-5 py-2.5 rounded-full shadow-2xl text-xs font-medium transition-all duration-300 flex items-center gap-2 z-50">
+        <i class="fa-solid fa-info text-blue-500"></i> <span id="toast-message">คัดลอกลงคลิปบอร์ดแล้ว</span>
+    </div>
 
+    <!-- ========================================== -->
+    <!-- 3. หน้าแสดงผล Raw ดิบแท้ (Raw Viewer View) -->
+    <!-- ========================================== -->
+    <div id="raw-view" class="hidden">
+        <pre id="raw-content"></pre>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 4. Logic & Core JavaScript Section -->
+    <!-- ========================================== -->
     <script>
-        const apiKey = "";
-        let chatHistory = [];
-        const MAX_HISTORY = 20;
+        const editor = document.getElementById('editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const charCount = document.getElementById('char-count');
 
-        marked.setOptions({
-            highlight: function(code, lang) {
-                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                return hljs.highlight(code, { language }).value;
-            },
-            langPrefix: 'hljs language-'
-        });
-
-        const editor = CodeMirror.fromTextArea(document.getElementById("codeEditor"), {
-            lineNumbers: true,
-            theme: "dracula",
-            mode: "javascript",
-            lineWrapping: true,
-            viewportMargin: Infinity
-        });
-
-        function fixEditorLayout() {
-            if (editor.getWrapperElement().offsetParent !== null) { editor.refresh(); }
+        // ฟังก์ชันในการจัดเรียงและแสดงแถวหมายเลขบรรทัด
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n');
+            const lineCount = lines.length;
+            let numHtml = '';
+            for (let i = 1; i <= lineCount; i++) {
+                numHtml += `${i}<br>`;
+            }
+            lineNumbers.innerHTML = numHtml;
         }
 
-        function toggleSidebar() {
-            const s = document.getElementById('sidebar');
-            const b = document.getElementById('chatToggleButton');
-            const isActive = s.classList.toggle('active');
-            b.style.display = isActive ? 'none' : 'flex';
-            setTimeout(fixEditorLayout, 350);
+        // จัดการเมื่อกรอกข้อมูล
+        function handleInput() {
+            updateLineNumbers();
+            charCount.innerText = `${editor.value.length} ตัวอักษร`;
+            
+            // สำรองลง LocalStorage ไว้เพื่อความปลอดภัยกันเว็บหลุด
+            localStorage.setItem('raw_share_backup', editor.value);
         }
 
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = (textarea.scrollHeight) + 'px';
-        }
-
-        async function fetchCode() {
-            const urlInput = document.getElementById('urlInput');
-            const url = urlInput.value.trim();
-            if (!url) return;
-            try {
-                const res = await fetch(url);
-                const content = await res.text();
-                editor.setValue(content);
-                fixEditorLayout();
-            } catch (e) { console.error("Fetch Error"); }
-        }
-
-        let activeLineHandle = null;
-        function goToLine() {
-            const input = document.getElementById('lineSearchInput');
-            const lineNum = parseInt(input.value);
-            if (isNaN(lineNum) || lineNum < 1 || lineNum > editor.lineCount()) return;
-            const targetLine = lineNum - 1;
-            if (activeLineHandle !== null) { editor.removeLineClass(activeLineHandle, "background", "highlight-line"); }
-            editor.setCursor({line: targetLine, ch: 0});
-            editor.focus();
-            const h = editor.getScrollInfo().clientHeight;
-            const coords = editor.charCoords({line: targetLine, ch: 0}, "local");
-            editor.scrollTo(null, (coords.top + coords.bottom) / 2 - (h / 2));
-            activeLineHandle = editor.addLineClass(targetLine, "background", "highlight-line");
+        // โหลดข้อมูลสำรองล่าสุดตอนเปิดเว็บ
+        window.onload = function() {
+            checkUrlMode(); // ตรวจสอบสถานะการแชร์จาก URL ก่อน
+            
+            if (localStorage.getItem('raw_share_backup')) {
+                editor.value = localStorage.getItem('raw_share_backup');
+                handleInput();
+            }
+            
+            // รอดีเลย์เล็กน้อยแล้วเช็คสถานะการต่อ Firebase
             setTimeout(() => {
-                if (activeLineHandle !== null) {
-                    editor.removeLineClass(activeLineHandle, "background", "highlight-line");
-                    activeLineHandle = null;
+                if (window.isFirebaseActive) {
+                    const badge = document.getElementById('cloud-badge');
+                    badge.innerHTML = '<i class="fa-solid fa-cloud text-emerald-400 mr-1"></i> Cloud Active';
+                    badge.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium";
+                    
+                    const saveBtn = document.getElementById('cloud-save-btn');
+                    saveBtn.className = "w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer";
+                    saveBtn.disabled = false;
+                    
+                    const notice = document.getElementById('firebase-notice');
+                    if (notice) notice.style.display = 'none';
                 }
-            }, 5000);
-        }
+            }, 1500);
+        };
 
-        function downloadCode() {
-            const text = editor.getValue();
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reaper_export_${Date.now()}.txt`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        function copyCode() {
-            const text = editor.getValue();
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = event.currentTarget;
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check text-green-400"></i> <span class="text-green-400">Copied</span>';
-                setTimeout(() => btn.innerHTML = originalHtml, 2000);
-            });
-        }
-
-        function showClearModal() { document.getElementById('confirmModal').classList.remove('hidden'); }
-        function closeClearModal() { document.getElementById('confirmModal').classList.add('hidden'); }
-        function confirmClearCode() { 
-            editor.setValue(""); 
-            closeClearModal(); 
-            fixEditorLayout(); 
-        }
-
-        async function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            const currentCode = editor.getValue();
-            if (!text) return;
-
-            appendMessage('user', text);
-            input.value = '';
-            input.style.height = 'auto';
-            chatHistory.push({ role: "user", parts: [{ text: text }] });
-
-            const thinking = document.getElementById('aiThinking');
-            thinking.classList.remove('hidden');
-            scrollToBottom();
-
-            const systemPrompt = `คุณคือ Reaper Assistant
-            1. เข้าประเด็นทันที (Direct to the point) ห้ามแนะนำตัวหรือทักทายซ้ำซ้อน
-            2. ตอบคำถามหรือแก้ไขโค้ดตามคำสั่งโดยไม่ต้องมีเกริ่นนำที่ยืดยาว
-            3. สุภาพแต่เป็นกันเองและเน้นความรวดเร็ว
-            4. หากผู้ใช้ถามเรื่องเทคนิค ให้เน้นความถูกต้องและ Optimized
-            5. ใช้ Markdown และ Highlight โค้ดให้สวยงามเสมอ`;
-
-            const payload = {
-                contents: [
-                    ...chatHistory.slice(-MAX_HISTORY).map((msg, index, arr) => {
-                        if (index === arr.length - 1 && msg.role === 'user') {
-                            return {
-                                role: "user",
-                                parts: [{ text: `[Current Codex Context]\n${currentCode || "Empty"}\n\n[User Input]\n${msg.parts[0].text}` }]
-                            };
-                        }
-                        return msg;
-                    })
-                ],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
-            };
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                thinking.classList.add('hidden');
-                const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Connection Error.";
-                chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
-                appendAiMessage(aiResponse);
-            } catch (err) {
-                thinking.classList.add('hidden');
-                appendMessage('ai', "Error processing request.");
+        // ลบข้อความที่กรอกไว้
+        function clearEditor() {
+            if (editor.value.trim() !== '') {
+                editor.value = '';
+                handleInput();
+                localStorage.removeItem('raw_share_backup');
+                showToast("ล้างหน้าจอและข้อมูลแคชแล้ว");
             }
         }
 
-        function appendMessage(role, text) {
-            const div = document.createElement('div');
-            div.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-4`;
-            div.innerHTML = `<div class="${role === 'user' ? 'msg-user' : 'msg-ai'} px-5 py-3.5 text-[14px] text-white max-w-[90%] whitespace-pre-wrap">${text}</div>`;
-            document.getElementById('chatMessages').appendChild(div);
-            scrollToBottom();
+        // เช็คว่าลิงก์ที่เข้ามีข้อมูลแชร์แบบ Raw หรือไม่
+        async function checkUrlMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rawParam = urlParams.get('raw'); // มีการเรียกใช้งานแบบ Raw ทันทีหรือไม่
+            const dataBase64 = urlParams.get('data'); // ข้อมูลแบบ Base64
+            const docId = urlParams.get('id'); // ดึงจากฐานข้อมูล Firestore
+
+            // ตรวจสอบความถูกต้องว่าต้องแสดงโหมดใด
+            if (rawParam === 'true' || rawParam === '') {
+                // โหมดแสดงข้อความดิบล้วน (Raw Viewer)
+                let textToShow = "";
+
+                if (dataBase64) {
+                    // ถอดรหัสข้อความจาก Base64
+                    try {
+                        textToShow = decodeURIComponent(atob(dataBase64));
+                        renderRawView(textToShow);
+                    } catch (e) {
+                        renderRawView("Error: ไม่สามารถถอดรหัสข้อมูล Base64 ได้ หรือข้อมูลไม่ถูกต้อง");
+                    }
+                } else if (docId) {
+                    // ดึงข้อมูลผ่านคลาวด์
+                    renderRawView("กำลังดึงข้อมูลดิบจากคลาวด์...");
+                    try {
+                        const db = window.db;
+                        if (db) {
+                            // ดึงตามกฎโครงสร้างของ Firestore (RULE 1): /artifacts/{appId}/public/data/{collectionName}
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', docId);
+                            const docSnap = await getDoc(docRef);
+                            
+                            if (docSnap.exists()) {
+                                textToShow = docSnap.data().content;
+                                renderRawView(textToShow);
+                            } else {
+                                renderRawView("Error: ไม่พบข้อมูลที่ต้องการในฐานข้อมูล");
+                            }
+                        } else {
+                            renderRawView("Error: ไม่ได้เปิดการใช้งานฐานข้อมูล Cloud Storage");
+                        }
+                    } catch (e) {
+                        renderRawView("Error: การดึงข้อมูลผิดพลาด -> " + e.message);
+                    }
+                }
+            } else if (dataBase64 || docId) {
+                // หากลิงก์มีข้อมูลแต่เปิดโหมดปกติ (ไม่ใช่ raw) โหลดเข้ามาโชว์ในกล่อง Editor
+                let textToLoad = "";
+                
+                if (dataBase64) {
+                    try {
+                        textToLoad = decodeURIComponent(atob(dataBase64));
+                        editor.value = textToLoad;
+                        handleInput();
+                    } catch (e) {
+                        showToast("ไม่สามารถประมวลลิงก์แชร์ได้");
+                    }
+                } else if (docId) {
+                    showToast("กำลังดึงข้อความจาก Cloud...");
+                    try {
+                        const db = window.db;
+                        if (db) {
+                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', docId);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                editor.value = docSnap.data().content;
+                                handleInput();
+                                showToast("ดึงข้อความเสร็จสิ้น!");
+                            }
+                        }
+                    } catch (e) {
+                        showToast("ดึงข้อความล้มเหลว");
+                    }
+                }
+            }
         }
 
-        function appendAiMessage(md) {
-            const div = document.createElement('div');
-            div.className = 'flex flex-col items-start w-full mb-4';
-            const bubble = document.createElement('div');
-            bubble.className = 'msg-ai prose prose-invert px-5 py-4 text-[14px] text-slate-200 w-full max-w-[95%] leading-relaxed';
+        // จัดแสดงผลหน้าตาแบบ Raw ดิบๆ 100% (ไม่มีตกแต่งใดๆ จากระบบนอกจาก Plain-text)
+        function renderRawView(text) {
+            // ซ่อน Editor UI
+            document.getElementById('editor-view').style.display = 'none';
+            document.getElementById('share-modal').style.display = 'none';
             
-            // Render Markdown
-            bubble.innerHTML = marked.parse(md);
+            // แสดงหน้าจอ Raw
+            const rawView = document.getElementById('raw-view');
+            const rawContent = document.getElementById('raw-content');
             
-            // Add Copy Button to Pre blocks
-            bubble.querySelectorAll('pre').forEach(pre => {
-                const btn = document.createElement('button');
-                btn.className = 'chat-copy-btn';
-                btn.innerHTML = '<i class="far fa-copy mr-1"></i> Copy';
-                btn.onclick = () => {
-                    const codeText = pre.querySelector('code').innerText;
-                    navigator.clipboard.writeText(codeText).then(() => {
-                        btn.innerHTML = '<i class="fas fa-check text-green-400 mr-1"></i> Copied';
-                        setTimeout(() => btn.innerHTML = '<i class="far fa-copy mr-1"></i> Copy', 2000);
-                    });
-                };
-                pre.appendChild(btn);
-            });
-
-            div.appendChild(bubble);
-            document.getElementById('chatMessages').appendChild(div);
-            scrollToBottom();
-            bubble.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
+            rawView.classList.remove('hidden');
+            document.body.className = "raw-layout"; // เปลี่ยนคลาส Layout หลักเป็นขาวดำ
+            
+            // แทนค่าแบบปลอดภัย ป้องกันการโดน XSS หากมีแท็ก HTML
+            rawContent.textContent = text;
         }
 
-        function scrollToBottom() {
-            const chat = document.getElementById('chatMessages');
-            requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+        // แปลงข้อความเป็นรูปแบบ Base64 และสร้างลิงก์
+        function generateUrlLink() {
+            const text = editor.value;
+            if (!text.trim()) {
+                showToast("⚠️ กรุณาพิมพ์ข้อความก่อนสร้างลิงก์");
+                return;
+            }
+
+            try {
+                // เข้ารหัส Unicode (รวมถึงภาษาไทย) เป็น Base64
+                const base64Data = btoa(encodeURIComponent(text));
+                const baseUrl = window.location.origin + window.location.pathname;
+                
+                // ลิงก์ที่ 1: สั่งเป็นหน้า Raw ทันทีเมื่อเข้าลิงก์
+                const rawLink = `${baseUrl}?raw=true&data=${base64Data}`;
+                // ลิงก์ที่ 2: ลิงก์กลับมาดูผ่านหน้า UI Editor ที่แก้ไขต่อได้
+                const normalLink = `${baseUrl}?data=${base64Data}`;
+
+                showShareModal(rawLink, normalLink);
+            } catch (e) {
+                showToast("เกิดข้อผิดพลาดในการเข้ารหัสข้อมูล");
+            }
         }
 
-        editor.on("change", (cm) => {
-            document.getElementById('lineCount').textContent = `REAPER CODEX | ${cm.lineCount()} LINES`;
-        });
+        // บันทึกลง Firestore (สำหรับผู้ใช้ที่เซ็ตอัพ Firestore เพิ่มเติมภายหลัง)
+        async function saveToCloud() {
+            const text = editor.value;
+            if (!text.trim()) {
+                showToast("⚠️ กรุณาพิมพ์ข้อความก่อนจัดเก็บ");
+                return;
+            }
 
-        document.getElementById('lineSearchInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') goToLine();
-        });
+            const db = window.db;
+            if (!db) {
+                showToast("ระบบคลาวด์ไม่พร้อมใช้งาน");
+                return;
+            }
 
-        window.addEventListener('load', fixEditorLayout);
-        window.addEventListener('resize', fixEditorLayout);
+            try {
+                showToast("กำลังประมวลผลข้อมูล...");
+                
+                // สุ่ม ID ความยาว 8 ตัวอักษร
+                const randomId = Math.random().toString(36).substring(2, 10);
+                
+                // ใช้โครงสร้าง Path ตามกฎ (RULE 1) เสมอ
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', randomId);
+                
+                await setDoc(docRef, {
+                    content: text,
+                    createdAt: new Date().toISOString()
+                });
+
+                const baseUrl = window.location.origin + window.location.pathname;
+                const rawLink = `${baseUrl}?raw=true&id=${randomId}`;
+                const normalLink = `${baseUrl}?id=${randomId}`;
+
+                showShareModal(rawLink, normalLink);
+            } catch (error) {
+                console.error("Cloud Save Error:", error);
+                showToast("บันทึกลงคลาวด์ผิดพลาด: " + error.message);
+            }
+        }
+
+        // แสดง Modal รวมผลลิงก์ทั้งหมด
+        function showShareModal(rawUrl, normalUrl) {
+            document.getElementById('raw-link-input').value = rawUrl;
+            document.getElementById('normal-link-input').value = normalUrl;
+            
+            const modal = document.getElementById('share-modal');
+            modal.classList.remove('hidden');
+        }
+
+        // ปิด Modal
+        function closeModal() {
+            document.getElementById('share-modal').classList.add('hidden');
+        }
+
+        // ใช้คำสั่ง Copy ของเบราว์เซอร์
+        function copyToClipboard(inputId) {
+            const copyText = document.getElementById(inputId);
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // สำหรับมือถือ
+            
+            // ใช้คำสั่งดั้งเดิมที่เสถียรที่สุดใน iframe ของ Canvas และ Netlify
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("📋 คัดลอกลิงก์สำเร็จแล้ว!");
+                } else {
+                    showToast("ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาก๊อปปี้ด้วยตนเอง");
+                }
+            } catch (err) {
+                showToast("เกิดข้อผิดพลาดในการคัดลอก");
+            }
+        }
+
+        // ระบบแจ้งเตือนไมโคร (Toast Notification)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            
+            toastMsg.innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
