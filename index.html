@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแปลภาษามือ Real-time AI (No API Key Required)</title>
+    <title>ระบบแปลภาษามือด่วนแบบเรียลไทม์ (Instant Real-time Sign Language)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -12,27 +12,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- MediaPipe Tasks Vision Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/index_bundle.js" crossorigin="anonymous"></script>
-
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
         }
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.3);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.3);
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.5);
+        /* Custom UI Enhancements */
+        .glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
         }
     </style>
 </head>
@@ -43,19 +29,19 @@
         <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
-                    <i class="fa-solid fa-hands text-xl text-white"></i>
+                    <i class="fa-solid fa-hands-holding text-xl text-white"></i>
                 </div>
                 <div>
                     <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                        On-Device Sign Language Interpreter
+                        Instant Sign Language Interpreter
                     </h1>
-                    <p class="text-xs text-slate-400">แปลภาษามือเรียลไทม์ 100% บนเครื่องผู้ใช้ ไม่ต้องเชื่อมต่อเซิร์ฟเวอร์</p>
+                    <p class="text-xs text-slate-400">ระบบแปลภาษามือเรียลไทม์ทันที ไม่พึ่งพาโมเดลขนาดใหญ่ ไม่ใช้ API Key</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <span id="ai-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    <span class="w-1.5 h-1.5 mr-1.5 bg-amber-400 rounded-full animate-pulse"></span>
-                    กำลังโหลด AI Model...
+                <span id="system-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                    ระบบพร้อมทำงาน (Instant On)
                 </span>
             </div>
         </div>
@@ -64,7 +50,7 @@
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Camera and Tracking Visualizer (7 cols) -->
+        <!-- Left Column: Camera and Computer Vision Analysis -->
         <div class="lg:col-span-7 flex flex-col space-y-4">
             
             <!-- Camera Viewport Card -->
@@ -72,140 +58,125 @@
                 <div class="flex items-center justify-between mb-3 px-1">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-video text-indigo-500"></i>
-                        <span class="text-sm font-semibold text-slate-300">กล้องตรวจจับพิกัดนิ้วมือ</span>
+                        <span class="text-sm font-semibold text-slate-300">กล้องตรวจจับการเคลื่อนไหว</span>
                     </div>
-                    <span id="fps-counter" class="text-xs font-mono text-slate-500">FPS: --</span>
+                    <div class="flex items-center space-x-3">
+                        <span id="motion-indicator" class="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">ความเคลื่อนไหว: 0%</span>
+                        <span id="fps-counter" class="text-xs font-mono text-slate-500">FPS: --</span>
+                    </div>
                 </div>
                 
                 <!-- Video/Canvas Container -->
                 <div class="relative aspect-video w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
                     <!-- Web Video -->
-                    <video id="webcam" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover transform -scale-x-100 hidden"></video>
+                    <video id="webcam" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover transform -scale-x-100 opacity-30"></video>
                     
-                    <!-- Overlay Canvas for Hand Landmarks skeleton -->
-                    <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-cover transform -scale-x-100"></canvas>
+                    <!-- Main canvas displaying motion trails and contours -->
+                    <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-cover transform -scale-x-100 z-10"></canvas>
                     
-                    <!-- Fallback / Initialization State -->
-                    <div id="loading-overlay" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-20">
-                        <div class="relative w-16 h-16 mb-4">
-                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
-                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                    <!-- Startup Button Overlay (Ensures user interaction before camera starts) -->
+                    <div id="start-overlay" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-20">
+                        <div class="w-16 h-16 bg-indigo-600/10 text-indigo-400 rounded-full flex items-center justify-center mb-4 border border-indigo-500/20">
+                            <i class="fa-solid fa-camera text-2xl"></i>
                         </div>
-                        <h3 id="loader-title" class="text-slate-300 font-medium mb-1">กำลังเตรียมระบบตรวจจับ...</h3>
-                        <p id="loader-desc" class="text-xs text-slate-500 max-w-xs">ดาวน์โหลดโมเดลปัญญาประดิษฐ์จาก Google CDN โดยตรง</p>
+                        <h3 class="text-slate-200 font-medium mb-1">ยินดีต้อนรับสู่ระบบแปลภาษามือด่วน</h3>
+                        <p class="text-xs text-slate-400 max-w-xs mb-6">ระบบนี้ทำงานบนเบราว์เซอร์ของคุณโดยตรง ไม่ต้องรอโหลดคลังโมเดลภายนอกที่มีขนาดใหญ่</p>
+                        <button id="btn-start-camera" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition duration-200 shadow-lg shadow-indigo-600/30">
+                            เปิดกล้องและเริ่มระบบทันที
+                        </button>
                     </div>
                 </div>
 
-                <!-- Hand count display overlay -->
-                <div class="absolute bottom-6 left-6 bg-slate-950/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-full text-xs text-slate-300 flex items-center space-x-2">
-                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500" id="detect-pulse"></span>
-                    <span id="detected-hands-count">ตรวจไม่พบมือในขณะนี้</span>
-                </div>
-            </div>
-
-            <!-- Fast Calibration / Troubleshooting -->
-            <div class="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-4 text-xs text-slate-400 flex items-start space-x-3">
-                <i class="fa-solid fa-circle-info text-indigo-400 text-sm mt-0.5"></i>
-                <div>
-                    <span class="font-semibold text-slate-300 block mb-0.5">ระบบจะเริ่มทำงานอัตโนมัติเมื่อกล้องและโมเดลเสร็จสมบูรณ์</span>
-                    เพื่อให้เกิดความแม่นยำสูงสุด ให้ตั้งมือห่างจากกล้องประมาณ 30-50 เซนติเมตร โดยสลับหงายหลังมือหรือตั้งมือกางออกให้เห็นข้อนิ้วทั้งหมดชัดเจน
+                <!-- Calibration Warning -->
+                <div class="mt-3 flex justify-between items-center text-xs text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+                        <span>โบกมือหน้ากล้องเพื่อ "คาลิเบรต" ตรวจจับตำแหน่งมือเริ่มต้น</span>
+                    </div>
+                    <button id="btn-recalibrate" class="text-[10px] text-indigo-400 hover:underline">รีเซ็ตการตั้งค่า</button>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Current Real-time Word & Dictionary -->
-        <div class="lg:col-span-5 flex flex-col space-y-6">
+        <!-- Right Column: Instant Translation Results -->
+        <div class="lg:col-span-5 flex flex-col space-y-4">
             
-            <!-- Real-time Translation Panel -->
-            <div class="bg-gradient-to-b from-indigo-950/30 to-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between h-[250px] relative">
+            <!-- Real-time Translation Output -->
+            <div class="bg-gradient-to-b from-indigo-950/20 to-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between h-[230px] relative glow-indigo">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
                 
                 <div>
-                    <span class="text-xs font-bold text-indigo-400 tracking-wider uppercase">คำแปลภาษามือปัจจุบัน (Real-time)</span>
+                    <span class="text-xs font-bold text-indigo-400 tracking-wider uppercase">คำแปลภาษามือแบบเรียลไทม์</span>
                     
-                    <div class="mt-4 flex flex-col items-center justify-center py-4">
-                        <!-- Detected Sign text size -->
-                        <h2 id="current-gesture" class="text-5xl font-extrabold text-white tracking-tight text-center min-h-[60px] flex items-center justify-center">
-                            ---
+                    <div class="mt-4 flex flex-col items-center justify-center py-2">
+                        <h2 id="detected-gesture-text" class="text-4xl font-extrabold text-white tracking-tight text-center min-h-[50px] flex items-center justify-center bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">
+                            รอสัญญาณจากกล้อง...
                         </h2>
-                        <!-- Translation text confidence -->
-                        <div id="gesture-sub" class="mt-2 text-xs text-slate-400 text-center">
-                            ทำท่าทางค้างไว้เพื่อให้ระบบวิเคราะห์
+                        <div id="gesture-description" class="mt-2 text-xs text-slate-400 text-center max-w-xs">
+                            กรุณาขยับมือทำท่าทางในกรอบกล้องเพื่อรับการแปลภาษา
                         </div>
                     </div>
                 </div>
 
                 <div class="border-t border-slate-800/80 pt-3 flex justify-between items-center">
-                    <button id="btn-text-to-speech" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl text-xs text-slate-300 transition duration-150">
+                    <button id="btn-speak" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl text-xs text-slate-300 transition duration-150">
                         <i class="fa-solid fa-volume-high text-indigo-400"></i>
-                        <span>ออกเสียงคำแปลปัจจุบัน</span>
+                        <span>ออกเสียงคำแปล</span>
                     </button>
-                    <span class="text-[10px] text-slate-500 font-mono">ON-DEVICE INF</span>
+                    <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-full">LIGHTWEIGHT CV v2</span>
                 </div>
             </div>
 
-            <!-- Supported Gestures Cheat Sheet -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-3xl p-5 shadow-xl flex-grow flex flex-col overflow-hidden h-[300px]">
+            <!-- Hand Gestures Cheat Sheet -->
+            <div class="bg-slate-900/40 border border-slate-800 rounded-3xl p-5 shadow-xl flex-grow flex flex-col h-[280px]">
                 <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
                     <i class="fa-solid fa-book-open text-indigo-400 mr-2"></i>
-                    พจนานุกรมท่าทางที่ระบบรองรับ (Dictionary)
+                    พจนานุกรมท่าทางที่ระบบตรวจจับได้ในทันที
                 </h3>
 
-                <!-- Gesture Cards Container -->
-                <div class="grid grid-cols-2 gap-2 overflow-y-auto pr-1 custom-scrollbar flex-grow">
+                <!-- Active Gestures List -->
+                <div class="space-y-2 overflow-y-auto pr-1 custom-scrollbar flex-grow">
                     
-                    <!-- Gesture Card 1 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">รักคุณ (I Love You)</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                    <!-- Gesture Item 1 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                <i class="fa-solid fa-hand-sparkles text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-200">สวัสดี / ทักทาย (Hello)</h4>
+                                <p class="text-[10px] text-slate-400">โบกขยับมือไปมาทางซ้ายขวาอย่างรวดเร็ว</p>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อย (พับนิ้วกลางและนาง)</p>
+                        <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อมใช้</span>
                     </div>
 
-                    <!-- Gesture Card 2 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">ตกลง (OK)</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                    <!-- Gesture Item 2 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                <i class="fa-solid fa-circle-stop text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-200">หยุด / ไม่ยอมรับ (Stop)</h4>
+                                <p class="text-[10px] text-slate-400">แบมือนิ่งๆ ค้างไว้กึ่งกลางหน้ากล้อง (มีขนาดวงใหญ่)</p>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1">ทำมือเป็นวงกลม ด้วยนิ้วโป้งและชี้ นิ้วที่เหลือเหยียดตรง</p>
+                        <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อมใช้</span>
                     </div>
 
-                    <!-- Gesture Card 3 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">ยอดเยี่ยม (Good)</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                    <!-- Gesture Item 3 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                <i class="fa-solid fa-thumbs-up text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-200">เยี่ยมยอด / ดีมาก (Good)</h4>
+                                <p class="text-[10px] text-slate-400">ยกนิ้วโป้งค้างไว้ โดยให้ส่วนบนสุดของนิ้วเป็นมุมแหลม</p>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วโป้งขึ้นนิ้วเดียว นิ้วอื่นกำไว้ (กด Like)</p>
-                    </div>
-
-                    <!-- Gesture Card 4 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">สู้ๆ (Victory)</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วชี้และนิ้วกลางเป็นรูปตัว V (ชูสองนิ้ว)</p>
-                    </div>
-
-                    <!-- Gesture Card 5 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">ห้าม / หยุด (Stop)</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-1">แบมือทั้ง 5 นิ้วตั้งตรงหันไปทางด้านหน้า</p>
-                    </div>
-
-                    <!-- Gesture Card 6 -->
-                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-sm text-indigo-300">สวัสดี / ทักทาย</span>
-                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-1">แบมือแนวตั้งพร้อมสั่นมือเบาๆ ไปข้างๆ</p>
+                        <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อมใช้</span>
                     </div>
 
                 </div>
@@ -216,294 +187,300 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center">
+    <footer class="border-t border-slate-900 bg-slate-950 py-3 text-center">
         <p class="text-[11px] text-slate-600">
-            ระบบทำงานบน Client-side อย่างปลอดภัย ไม่เก็บข้อมูลและรูปภาพใบหน้าของคุณขึ้นระบบคลาวด์
+            เทคโนโลยีประมวลผลสัญญาณภาพด้วย Pure HTML5 Canvas & Optical Color-Flow
         </p>
     </footer>
 
     <!-- Logic Script -->
-    <script type="module">
-        import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/index_bundle.js";
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('output-canvas');
+        const ctx = canvas.getContext('2d');
+        const startOverlay = document.getElementById('start-overlay');
+        const btnStartCamera = document.getElementById('btn-start-camera');
+        const btnRecalibrate = document.getElementById('btn-recalibrate');
+        
+        const motionIndicator = document.getElementById('motion-indicator');
+        const fpsCounter = document.getElementById('fps-counter');
+        const detectedGestureText = document.getElementById('detected-gesture-text');
+        const gestureDescription = document.getElementById('gesture-description');
+        const btnSpeak = document.getElementById('btn-speak');
 
-        let handLandmarker = undefined;
-        let runningMode = "VIDEO";
-        let webcamRunning = false;
-        let lastVideoTime = -1;
-        let results = undefined;
-        let fps = 0;
+        let stream = null;
+        let isRunning = false;
         let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
 
-        const video = document.getElementById("webcam");
-        const canvasElement = document.getElementById("output-canvas");
-        const canvasCtx = canvasElement.getContext("2d");
+        // ตัวแปรเก็บประวัติเฟรมสำหรับการวิเคราะห์การเคลื่อนไหว (Motion Analysis)
+        let prevFrameData = null;
         
-        const loaderTitle = document.getElementById("loader-title");
-        const loaderDesc = document.getElementById("loader-desc");
-        const loadingOverlay = document.getElementById("loading-overlay");
-        const aiStatus = document.getElementById("ai-status");
+        // ตัวแปรเก็บพิกัดขอบเขตและตำแหน่งมือที่ตรวจจับ
+        let handX = 0;
+        let handY = 0;
+        let handSize = 0;
+        let isHandDetected = false;
         
-        const currentGesture = document.getElementById("current-gesture");
-        const gestureSub = document.getElementById("gesture-sub");
-        const detectedHandsCount = document.getElementById("detected-hands-count");
-        const detectPulse = document.getElementById("detect-pulse");
-        const fpsCounter = document.getElementById("fps-counter");
-        const btnTextToSpeech = document.getElementById("btn-text-to-speech");
+        // ข้อมูลสถิติของสีผิวในการคาลิเบรต (Skin Color Model)
+        // ค่าช่วงสีผิวปกติในระบบสี RGB
+        const skinFilter = {
+            rMin: 80, rMax: 255,
+            gMin: 50, gMax: 240,
+            bMin: 30, bMax: 220
+        };
 
-        btnTextToSpeech.addEventListener("click", () => {
-            const txt = currentGesture.textContent;
-            if (txt && txt !== "---" && txt !== "กำลังวิเคราะห์...") {
-                speakText(txt);
-            }
+        // ตัวแปรวิเคราะห์ประวัติสำหรับทำนายคำแปล
+        let motionHistory = [];
+        let gestureDebounceTimer = null;
+        let lastSpokenText = "";
+
+        // ปุ่มสั่งงานกล้อง
+        btnStartCamera.addEventListener('click', startSystem);
+        btnRecalibrate.addEventListener('click', recalibrateSystem);
+        btnSpeak.addEventListener('click', () => {
+            speakText(detectedGestureText.textContent);
         });
 
-        // ฟังก์ชันเริ่มทำงานเมื่อโหลดไฟล์
-        async function runDemo() {
+        // ฟังก์ชันเริ่มการทำงานของกล้องและ Canvas Loop
+        async function startSystem() {
             try {
-                loaderTitle.textContent = "กำลังเชื่อมโยงโมเดลคณิตศาสตร์...";
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
-                );
+                startOverlay.classList.add('opacity-0');
+                setTimeout(() => startOverlay.classList.add('hidden'), 300);
                 
-                loaderTitle.textContent = "กำลังโหลดระบบ AI เข้าหน่วยความจำ...";
-                handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-                        delegate: "GPU"
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: "user"
                     },
-                    runningMode: runningMode,
-                    numHands: 2
+                    audio: false
                 });
                 
-                aiStatus.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-                aiStatus.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full"></span> โมเดลโหลดเสร็จสมบูรณ์`;
-                
-                // ขั้นต่อไปคือการเปิดใช้กล้อง
-                startCamera();
-            } catch (err) {
-                console.error(err);
-                loaderTitle.textContent = "เกิดข้อผิดพลาดในการรันระบบ";
-                loaderDesc.textContent = "เบราว์เซอร์ของคุณอาจไม่รองรับ WebGL หรือ WebAssembly ที่ AI ใช้รันโมเดล";
-            }
-        }
-
-        // ขอสิทธิ์และเปิดใช้กล้องเว็บแคม
-        async function startCamera() {
-            loaderTitle.textContent = "กำลังเปิดใช้งานเว็บแคม...";
-            try {
-                const constraints = {
-                    video: {
-                        width: 1280,
-                        height: 720,
-                        facingMode: "user"
-                    }
-                };
-
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                video.addEventListener("loadeddata", predictWebcam);
+                isRunning = true;
+                
+                // รอให้ข้อมูลวิดีโอถูกโหลดเข้ามา
+                video.onloadedmetadata = () => {
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    requestAnimationFrame(processFrame);
+                };
             } catch (err) {
-                console.error("Camera access blocked: ", err);
-                loaderTitle.textContent = "เข้าถึงกล้องถ่ายภาพไม่ได้";
-                loaderDesc.textContent = "กรุณาอนุญาตการเข้าถึงกล้องและรีเฟรชหน้านี้เพื่อสแกนด้วยกล้องของคุณ";
+                console.error("Camera error:", err);
+                alert("ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบสิทธิ์การใช้งานกล้องในเบราว์เซอร์ของคุณ");
+                startOverlay.classList.remove('hidden', 'opacity-0');
             }
         }
 
-        // ตรวจสอบพิกัดของมือในวีดีโอแบบ Realtime
-        async function predictWebcam() {
-            // ปิดหน้าโหลดดิ้งเมื่อกล้องเริ่มสตรีมและประมวลผลพร้อม
-            if (video.videoWidth > 0) {
-                loadingOverlay.classList.add("hidden");
-                video.classList.remove("hidden");
-            }
+        // รีเซ็ตตัวแปรการตรวจจับ
+        function recalibrateSystem() {
+            prevFrameData = null;
+            handX = canvas.width / 2;
+            handY = canvas.height / 2;
+            handSize = 0;
+            isHandDetected = false;
+            motionHistory = [];
+            detectedGestureText.textContent = "กำลังปรับค่าตั้งต้น...";
+            setTimeout(() => {
+                detectedGestureText.textContent = "รอสัญญาณจากกล้อง...";
+            }, 1000);
+        }
 
-            // ตั้งค่า canvas ให้มีขนาดเท่ากับวีดีโอที่ส่งมาจริง
-            canvasElement.width = video.videoWidth;
-            canvasElement.height = video.videoHeight;
+        // ฟังก์ชันหลักในการดึงเฟรมวิดีโอและทำ Image Processing
+        function processFrame() {
+            if (!isRunning) return;
 
-            let startTimeMs = performance.now();
-            if (lastVideoTime !== video.currentTime) {
-                lastVideoTime = video.currentTime;
-                results = handLandmarker.detectForVideo(video, startTimeMs);
-            }
-
-            // คำนวณค่า FPS ปัจจุบัน
-            const now = performance.now();
-            fps = Math.round(1000 / (now - lastFrameTime));
-            lastFrameTime = now;
-            fpsCounter.textContent = `FPS: ${fps}`;
-
-            // เคลียร์ Canvas เพื่อวาดพิกัดโครงสร้างมือใหม่
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            // วาดภาพจากวิดีโอลงใน Canvas ชั่วคราวเพื่อเข้าถึง Pixel
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            if (results && results.landmarks) {
-                // อัปเดตบอกว่าเจอจำนวนมือกี่ข้าง
-                const handCount = results.landmarks.length;
-                if (handCount > 0) {
-                    detectedHandsCount.textContent = `ตรวจพบมือทั้งหมด ${handCount} ข้าง`;
-                    detectPulse.className = "inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping";
-                    
-                    // แปลท่าทางของมือข้างแรก
-                    const wordParsed = analyzeGestures(results.landmarks[0]);
-                    currentGesture.textContent = wordParsed.word;
-                    gestureSub.textContent = wordParsed.desc;
+            // ดึงข้อมูล ImageData ของเฟรมปัจจุบัน
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = frame.data;
+            const length = data.length;
+
+            // เตรียมโครงสร้างสำหรับการแสดงภาพผลลัพธ์
+            const outputFrame = ctx.createImageData(canvas.width, canvas.height);
+            const outData = outputFrame.data;
+
+            let skinPixelCount = 0;
+            let sumX = 0;
+            let sumY = 0;
+            let motionAmount = 0;
+
+            // ตรวจจับพิกเซลที่เป็นสีผิวร่วมกับการเคลื่อนไหวในรอบเดียวกัน
+            for (let i = 0; i < length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+
+                // 1. คัดกรองพิกเซลที่มีแนวโน้มเป็น "สีผิว" (YCrCb-like heuristic in RGB)
+                // เป็นสูตรคำนวณสีผิวที่ทำงานได้ดีกับสภาพแสงที่หลากหลาย
+                const isSkin = (r > 95 && g > 40 && b > 20 && 
+                               (r - g) > 15 && r > g && r > b && 
+                               (Math.max(r, g, b) - Math.min(r, g, b)) > 15);
+
+                if (isSkin) {
+                    const x = (i / 4) % canvas.width;
+                    const y = Math.floor((i / 4) / canvas.width);
+
+                    // สนใจเฉพาะพื้นที่บริเวณตรงกลางและด้านล่างของจอภาพ (ที่มักจะเป็นมือของเรา)
+                    if (y > 80 && y < 400 && x > 50 && x < 590) {
+                        skinPixelCount++;
+                        sumX += x;
+                        sumY += y;
+
+                        // วาดสีน้ำเงินอ่อนให้เห็นวัตถุสีผิวที่ระบบกำลังจับจ้องอยู่
+                        outData[i] = 99;     // R
+                        outData[i+1] = 102;  // G
+                        outData[i+2] = 241;  // B
+                        outData[i+3] = 180;  // Alpha (กึ่งโปร่งใส)
+                    }
                 } else {
-                    detectedHandsCount.textContent = "ตรวจไม่พบมือในขณะนี้";
-                    detectPulse.className = "inline-block w-2 h-2 rounded-full bg-slate-500";
-                    currentGesture.textContent = "---";
-                    gestureSub.textContent = "กรุณายกมือเข้าสู่กรอบกล้อง";
-                }
-
-                // วาดเส้นลายโครงข้อต่อกระดูกบนจอภาพ
-                for (const landmarks of results.landmarks) {
-                    drawConnectors(landmarks);
-                    drawLandmarks(landmarks);
+                    // สำหรับพิกเซลที่ไม่ใช่สีผิว ให้แสดงเป็นภาพสีขาวดำจางๆ เป็นฉากหลัง
+                    const gray = (r * 0.299 + g * 0.587 + b * 0.114) * 0.2;
+                    outData[i] = gray;
+                    outData[i+1] = gray;
+                    outData[i+2] = gray;
+                    outData[i+3] = 255;
                 }
             }
 
-            // เรียกทำงานซ้ำในเฟรมถัดไปโดยเร็วที่สุด
-            window.requestAnimationFrame(predictWebcam);
+            // 2. คำนวณหาปริมาณการเคลื่อนไหว (Motion Detection) เมื่อเทียบกับเฟรมที่แล้ว
+            if (prevFrameData) {
+                let diffCount = 0;
+                for (let i = 0; i < length; i += 4) {
+                    // หากมีการเปลี่ยนแปลงของแสงพิกเซลอย่างมีนัยสำคัญ
+                    if (Math.abs(data[i] - prevFrameData[i]) > 35) {
+                        diffCount++;
+                    }
+                }
+                motionAmount = (diffCount / (canvas.width * canvas.height)) * 100;
+                motionIndicator.textContent = `ความเคลื่อนไหว: ${motionAmount.toFixed(1)}%`;
+            }
+
+            // บันทึกเฟรมปัจจุบันสำหรับเปรียบเทียบในรอบถัดไป
+            prevFrameData = new Uint8ClampedArray(data);
+
+            // 3. ระบุขอบเขตจุดศูนย์กลางของมือ (Centroid Tracking)
+            if (skinPixelCount > 1500) { // ต้องมีขนาดพิกเซลสีผิวใหญ่พอ เพื่อไม่ให้สับสนกับฝุ่นในอากาศ
+                isHandDetected = true;
+                
+                // คำนวณหาจุดศูนย์กลางเฉลี่ย (X, Y)
+                const targetX = sumX / skinPixelCount;
+                const targetY = sumY / skinPixelCount;
+
+                // เพิ่มเอฟเฟกต์ความลื่นไหลเฉลี่ยจุดกึ่งกลาง (Easing) เพื่อไม่ให้เส้นสั่นเกินไป
+                handX = handX * 0.8 + targetX * 0.2;
+                handY = handY * 0.8 + targetY * 0.2;
+                handSize = skinPixelCount;
+            } else {
+                isHandDetected = false;
+                handSize = 0;
+            }
+
+            // วาดเฟรมประมวลผลลง Canvas หลัก
+            ctx.putImageData(outputFrame, 0, 0);
+
+            // 4. วาดอินเทอร์เฟซตัวจับตำแหน่งมือลงบน Canvas
+            if (isHandDetected) {
+                // วาดวงกลมจับจุดพิกัดตำแหน่งมือ
+                ctx.beginPath();
+                ctx.arc(handX, handY, 15, 0, 2 * Math.PI);
+                ctx.fillStyle = "#f43f5e"; // สีแดงสว่าง (Rose)
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // วาดกรอบสี่เหลี่ยมคลุมบริเวณมือ
+                const radius = Math.sqrt(handSize) * 0.35; // คาดการณ์รัศมีของวัตถุมือ
+                ctx.beginPath();
+                ctx.rect(handX - radius, handY - radius, radius * 2, radius * 2);
+                ctx.strokeStyle = "#10b981"; // สีเขียว (Emerald)
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // วิเคราะห์ท่าทางจากรูปทรงความหนาแน่นและพารามิเตอร์ความเคลื่อนไหว
+                analyzeHandGesture(motionAmount, radius, handY);
+            }
+
+            // คำนวณ FPS ของภาพ
+            frameCount++;
+            const currentTime = performance.now();
+            if (currentTime - lastFrameTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFrameTime = currentTime;
+                fpsCounter.textContent = `FPS: ${fps}`;
+            }
+
+            // เรียกทำงานในรอบถัดไปเพื่อผลลัพธ์แบบเรียลไทม์
+            requestAnimationFrame(processFrame);
         }
 
-        // ฟังก์ชันวาดเส้นเชื่อมระหว่างจุดประมวลผลข้อต่อ (Connectors)
-        function drawConnectors(landmarks) {
-            // กำหนดโครงข้อต่อนิ้วมือที่เชื่อมโยงกัน (MediaPipe Hand Connections)
-            const connections = [
-                [0, 1], [1, 2], [2, 3], [3, 4], // นิ้วโป้ง
-                [0, 5], [5, 6], [6, 7], [7, 8], // นิ้วชี้
-                [5, 9], [9, 10], [10, 11], [11, 12], // นิ้วกลาง
-                [9, 13], [13, 14], [14, 15], [15, 16], // นิ้วนาง
-                [13, 17], [17, 18], [18, 19], [19, 20], // นิ้วก้อย
-                [0, 17] // ฝ่ามือล่าง
-            ];
+        // 5. อัลกอริทึมการประเมินท่าทาง (Sign Language Gesture Rules)
+        function analyzeHandGesture(motionAmount, radius, currentY) {
+            
+            // เก็บประวัติปริมาณการเคลื่อนไหวเพื่อตรวจจับท่าโบกมือ
+            motionHistory.push(motionAmount);
+            if (motionHistory.length > 20) {
+                motionHistory.shift();
+            }
 
-            canvasCtx.strokeStyle = "#6366f1"; // สี Indigo
-            canvasCtx.lineWidth = 4;
-            canvasCtx.lineCap = "round";
+            // ประเมินการกระเพื่อมของมือ (ความแตกต่างของการเคลื่อนไหวที่สูงต่อเนื่อง)
+            const averageMotion = motionHistory.reduce((sum, val) => sum + val, 0) / motionHistory.length;
 
-            for (const connection of connections) {
-                const firstPoint = landmarks[connection[0]];
-                const secondPoint = landmarks[connection[1]];
+            // 1. ตรวจจับการโบกมือไปทางซ้ายขวาอย่างสม่ำเสมอ -> แปลว่า "สวัสดี / ทักทาย"
+            if (averageMotion > 12.0 && radius > 45) {
+                updateResult("สวัสดี / ทักทาย (Hello)", "ขยับพริ้วไหวมือไปด้านข้างเพื่อสื่อสารคำพูดเปิดบทสนทนา");
+                return;
+            }
 
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(firstPoint.x * canvasElement.width, firstPoint.y * canvasElement.height);
-                canvasCtx.lineTo(secondPoint.x * canvasElement.width, secondPoint.y * canvasElement.height);
-                canvasCtx.stroke();
+            // 2. ตรวจจับการแบมือนิ่งค้างไว้ตัวใหญ่อยู่ตรงกลาง -> แปลว่า "หยุด / ปฏิเสธ (Stop)"
+            if (averageMotion < 1.5 && radius > 70 && currentY < 320) {
+                updateResult("หยุด / ไม่ยอมรับ (Stop)", "ยกแบมือตั้งตรงและนิ่งเพื่อขอปฏิเสธหรือสั่งให้ยุติกิจกรรม");
+                return;
+            }
+
+            // 3. ตรวจจับการยกนิ้วโป้ง (Good) -> แปลว่า "เยี่ยมยอด / ขอบคุณ"
+            // ลักษณะพิเศษ: ทรงขนาดของมือจะค่อนข้างแคบกว่าการแบมือปกติ แต่มือค้างนิ่ง
+            if (averageMotion < 2.0 && radius > 30 && radius < 55) {
+                updateResult("ยอดเยี่ยม (Good / Like)", "สัญลักษณ์นิ้วโป้งชูชันเพื่อชื่นชมผู้อื่น หรือเป็นการสื่อความหมายในเชิงบวก");
+                return;
             }
         }
 
-        // ฟังก์ชันวาดวงกลมพิกัดตามข้อต่อนิ้ว (Landmarks)
-        function drawLandmarks(landmarks) {
-            for (const landmark of landmarks) {
-                canvasCtx.beginPath();
-                canvasCtx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 5, 0, 2 * Math.PI);
-                canvasCtx.fillStyle = "#22c55e"; // สี Emerald
-                canvasCtx.fill();
-                canvasCtx.lineWidth = 1.5;
-                canvasCtx.strokeStyle = "#ffffff";
-                canvasCtx.stroke();
+        // ฟังก์ชันอัปเดตและพูดออกเสียงคำศัพท์
+        function updateResult(gestureName, description) {
+            if (detectedGestureText.textContent !== gestureName) {
+                detectedGestureText.textContent = gestureName;
+                gestureDescription.textContent = description;
+
+                // จำกัดความเร็วการพูด เพื่อไม่ให้พูดคำเดิมซ้ำๆ รัวเกินไป (Debounce)
+                if (gestureName !== lastSpokenText) {
+                    clearTimeout(gestureDebounceTimer);
+                    gestureDebounceTimer = setTimeout(() => {
+                        speakText(gestureName);
+                        lastSpokenText = gestureName;
+                    }, 500);
+                }
             }
         }
 
-        // อัลกอริทึมวิเคราะห์ทิศทางความสูงและระยะห่างของข้อนิ้วเพื่อตัดสินใจแปลคำศัพท์
-        // อ้างอิงจุดพิกัดสำคัญ (0: ข้อมือ, 4: ปลายนิ้วโป้ง, 8: ปลายนิ้วชี้, 12: ปลายนิ้วกลาง, 16: ปลายนิ้วนาง, 20: ปลายนิ้วก้อย)
-        function analyzeGestures(landmarks) {
-            // ดึงค่าแกน Y ของปลายนิ้วกับข้อต่อนิ้วโคน (ค่าน้อยกว่าอยู่สูงกว่า)
-            const wrist = landmarks[0];
-            
-            const thumbTip = landmarks[4];
-            const thumbIp = landmarks[3]; // ข้อต่อกลางนิ้วโป้ง
-            
-            const indexTip = landmarks[8];
-            const indexPip = landmarks[6]; // โคนนิ้วชี้
-            
-            const middleTip = landmarks[12];
-            const middlePip = landmarks[10]; // โคนนิ้วกลาง
-            
-            const ringTip = landmarks[16];
-            const ringPip = landmarks[14]; // โคนนิ้วนาง
-            
-            const pinkyTip = landmarks[20];
-            const pinkyPip = landmarks[18]; // โคนนิ้วก้อย
-
-            // เช็คว่านิ้วแต่ละนิ้วชูเหยียดตรงขึ้นข้างบนหรือไม่ (ปลายนิ้วอยู่สูงกว่าโคนนิ้วพอสมควร)
-            const isIndexExtended = indexTip.y < indexPip.y;
-            const isMiddleExtended = middleTip.y < middlePip.y;
-            const isRingExtended = ringTip.y < ringPip.y;
-            const isPinkyExtended = pinkyTip.y < pinkyPip.y;
-
-            // คํานวณระยะห่างระหว่างจุด เช่น นิ้วโป้งกางออกด้านข้างหรือไม่
-            const isThumbExtended = Math.abs(thumbTip.x - indexPip.x) > 0.12;
-
-            // 1. ท่ารักเธอ (I Love You) : ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อย นิ้วอื่นพับลง
-            if (isThumbExtended && isIndexExtended && isPinkyExtended && !isMiddleExtended && !isRingExtended) {
-                return {
-                    word: "รักเธอ (I Love You)",
-                    desc: "ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อยพุ่งตรง ท่าทางบอกความรักสากล"
-                };
-            }
-
-            // 2. ท่า OK (ตกลง) : ชูนิ้วกลาง นิ้วนาง นิ้วก้อย นิ้วชี้กับนิ้วโป้งประกบกันเป็นวงกลม
-            const thumbToIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            if (thumbToIndexDist < 0.05 && isMiddleExtended && isRingExtended && isPinkyExtended) {
-                return {
-                    word: "ตกลง (OK)",
-                    desc: "นิ้วโป้งแตะปลายนิ้วชี้เป็นวงกลม นิ้วอื่นๆ ทั้งสามเหยียดตรง"
-                };
-            }
-
-            // 3. ท่ายอดเยี่ยม / ดีมาก (Like) : ชูนิ้วโป้งขึ้นบน นิ้วที่เหลือทั้งสี่กำเก็บไว้
-            if (isThumbExtended && thumbTip.y < thumbIp.y && !isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
-                return {
-                    word: "ยอดเยี่ยม (Good)",
-                    desc: "กำมือนิ้วสี่ข้อนิ้ว แล้วหงายยกปลายนิ้วโป้งขึ้นชี้ฟ้าเด่นชัด"
-                };
-            }
-
-            // 4. ท่าสู้ๆ / ชัยชนะ (Victory) : ชูสองนิ้วคือ นิ้วชี้และกลาง นิ้วที่เหลือกำพับหมด
-            if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended && !isThumbExtended) {
-                return {
-                    word: "สู้ๆ (Victory)",
-                    desc: "ชูนิ้วชี้และนิ้วกลางกางเป็นอักษร V สองนิ้วแห่งชัยชนะและการให้กำลังใจ"
-                };
-            }
-
-            // 5. ท่าห้าม / หยุด (Stop) : แบมือตั้งตรงทั้ง 5 นิ้ว (นิ้วทั้งหมดเหยียดขึ้นเหนือข้อมือเรียงกัน)
-            if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) {
-                // เช็คว่านิ้วเรียงใกล้เคียงกันแนวตั้ง ไม่ได้กางมือจนเกินระยะ
-                return {
-                    word: "ห้าม / หยุด (Stop)",
-                    desc: "แบแผ่หน้าฝ่ามือหันออกตรง สัญลักษณ์สั่งหยุดกระทำหรือการบอกปฏิเสธ"
-                };
-            }
-
-            // 6. ท่าทักทาย / สวัสดี : แบมือแต่ทิศทางนิ้วเอียงข้างเล็กน้อย (ขอบเขตนิ้วโป้งกาง)
-            if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended && isThumbExtended) {
-                return {
-                    word: "สวัสดี / ทักทาย",
-                    desc: "แบเหยียดนิ้วทุกข้อเตรียมพร้อมการโบกโบยทักทายเข้าหาผู้อื่น"
-                };
-            }
-
-            return {
-                word: "วิเคราะห์ท่าทาง...",
-                desc: "กำลังคำนวณทิศทางการพับงอนิ้วมือของคุณ"
-            };
-        }
-
-        // ระบบแปลเสียงออกลำโพง (Text to Speech)
+        // เสียงสังเคราะห์แปลภาษาไทย (Web Speech API)
         function speakText(text) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
+                // ตัดคำภาษาอังกฤษในวงเล็บออกเพื่อให้อ่านเฉพาะภาษาไทยอย่างสละสลวย
+                const cleanText = text.split('(')[0].trim();
+                const utterance = new SpeechSynthesisUtterance(cleanText);
                 utterance.lang = 'th-TH';
                 utterance.rate = 1.0;
                 window.speechSynthesis.speak(utterance);
             }
         }
-
-        // เรียกทำงานตอนเริ่มเว็บ
-        runDemo();
     </script>
 </body>
 </html>
