@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaper Match I  Project Reaper</title>
+    <title>Reaper Match | ควย</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Sarabun & Kanit) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- PeerJS for WebRTC P2P Video/Audio Calling -->
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-
-    <!-- Firebase App & Firestore (SDK v9 Compatibility) -->
+    <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
         body {
@@ -32,7 +29,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4) 0%, transparent 40%, transparent 70%, rgba(15, 23, 42, 0.8) 100%);
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.2) 0%, transparent 40%, transparent 70%, rgba(15, 23, 42, 0.7) 100%);
             pointer-events: none;
         }
         /* Custom scrollbar for chat */
@@ -48,20 +45,20 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-rose-500/30 selection:text-rose-200">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
 
     <!-- Header -->
     <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-gradient-to-tr from-rose-500 to-pink-500 p-2.5 rounded-2xl shadow-lg shadow-rose-500/30 animate-pulse">
+                <div class="bg-gradient-to-tr from-rose-500 to-pink-500 p-2.5 rounded-2xl shadow-lg shadow-rose-500/30">
                     <i class="fa-solid fa-video text-lg text-white"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-rose-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
-                        Omi Match
+                        Omi Match Live
                     </h1>
-                    <p class="text-[10px] text-slate-400">สุ่มคุยกล้องหน้าเปิดโลกกว้างกับเพื่อนใหม่ทั่วโลก</p>
+                    <p class="text-[10px] text-slate-400">จับคู่คุยกล้องแบบเรียลไทม์ 1-on-1 ผ่าน WebRTC ด่วน</p>
                 </div>
             </div>
             
@@ -71,49 +68,49 @@
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span id="online-count" class="text-xs font-medium text-slate-300">สแตนด์บายสุ่ม: 1 คน</span>
+                    <span id="connection-status" class="text-xs font-medium text-slate-300">กำลังเชื่อมต่อฐานข้อมูล...</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Live Screen Area -->
+    <!-- Main Section -->
     <main class="max-w-6xl mx-auto px-4 py-4 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-140px)]">
         
         <!-- Left Section: Video Layout (8 Cols) -->
         <div class="lg:col-span-8 flex flex-col space-y-4 h-full">
             
-            <!-- Dual Video Box (Responsive Grid) -->
+            <!-- Dual Video Box -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 min-h-[350px]">
                 
                 <!-- Remote User Video (The Stranger) -->
-                <div class="video-container relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 flex items-center justify-center group">
+                <div class="video-container relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 flex items-center justify-center">
                     <video id="remote-video" class="w-full h-full object-cover transform rounded-3xl" autoplay playsinline></video>
                     
                     <!-- Placeholder when not connected -->
-                    <div id="remote-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-slate-900/90 transition-all duration-300">
-                        <div class="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mb-4 border border-rose-500/20 animate-bounce">
+                    <div id="remote-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-slate-900/95 transition-all duration-300">
+                        <div class="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mb-4 border border-rose-500/20">
                             <i class="fa-solid fa-user-astronaut text-3xl text-rose-400"></i>
                         </div>
-                        <h3 class="text-slate-200 font-bold text-lg mb-1">ยินดีต้อนรับสู่โหมดจับคู่</h3>
-                        <p class="text-xs text-slate-400 max-w-xs">กดปุ่มสุ่มจับคู่ด้านล่างเพื่อเริ่มค้นหาเพื่อนคุยใหม่ๆ ได้ทันที</p>
+                        <h3 class="text-slate-200 font-bold text-lg mb-1">สุ่มค้นหาเพื่อนคุย</h3>
+                        <p class="text-xs text-slate-400 max-w-xs">กดปุ่มสีแดงด้านล่าง เพื่อแชร์สตรีมและเริ่มค้นหาผู้ใช้งานอื่นที่เปิดหน้านี้อยู่ในขณะนี้</p>
                     </div>
 
                     <!-- Stranger Identity Label -->
                     <div class="absolute bottom-4 left-4 z-20 flex items-center space-x-2 bg-slate-950/80 backdrop-blur px-3.5 py-1.5 rounded-full border border-slate-800">
-                        <i class="fa-solid fa-globe text-rose-400 text-xs"></i>
-                        <span id="remote-name" class="text-xs font-semibold text-slate-200">เพื่อนที่เพิ่งจับคู่</span>
+                        <i class="fa-solid fa-globe text-rose-400 text-xs animate-spin-slow"></i>
+                        <span id="remote-label" class="text-xs font-semibold text-slate-200">เพื่อนปลายทาง</span>
                     </div>
 
                     <!-- Overlay Loading State during matching -->
-                    <div id="matching-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center hidden z-30">
+                    <div id="matching-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-30">
                         <div class="relative w-20 h-20 mb-6">
-                            <div class="absolute inset-0 rounded-full border-4 border-rose-500/10"></div>
+                            <div class="absolute inset-0 rounded-full border-4 border-rose-500/15"></div>
                             <div class="absolute inset-0 rounded-full border-4 border-t-rose-500 border-r-pink-500 animate-spin"></div>
                             <i class="fa-solid fa-heart-pulse text-2xl text-rose-500 absolute inset-0 flex items-center justify-center animate-pulse"></i>
                         </div>
-                        <h4 class="text-lg font-bold text-slate-200 animate-pulse">กำลังสุ่มหากลุ่มเป้าหมายใหม่...</h4>
-                        <p class="text-xs text-slate-500 mt-2">โปรดมั่นใจว่าได้เปิดระบบกล้องแล้ว</p>
+                        <h4 class="text-lg font-bold text-slate-200" id="matching-status-text">กำลังลงทะเบียนสุ่มหาคู่...</h4>
+                        <p class="text-xs text-slate-400 mt-2">กำลังรอคู่สนทนาเปิดกล้องเชื่อมสายหากัน</p>
                     </div>
                 </div>
 
@@ -126,14 +123,14 @@
                         <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-3">
                             <i class="fa-solid fa-video-slash text-xl text-slate-400"></i>
                         </div>
-                        <h3 class="text-sm font-semibold text-slate-300">กล้องของคุณ</h3>
-                        <p class="text-[10px] text-slate-500 max-w-xs mt-1">โปรดอนุญาตให้เว็บเข้าใช้งานกล้องและไมโครโฟน</p>
+                        <h3 class="text-sm font-semibold text-slate-300">กล้องทดสอบของคุณ</h3>
+                        <p class="text-[10px] text-slate-500 max-w-xs mt-1">โปรดอนุญาตสิทธิ์เข้าถึงอุปกรณ์เพื่อรับส่งภาพ</p>
                     </div>
 
                     <!-- My Identity Label -->
                     <div class="absolute bottom-4 left-4 z-20 flex items-center space-x-2 bg-slate-950/80 backdrop-blur px-3.5 py-1.5 rounded-full border border-slate-800">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span class="text-xs font-semibold text-slate-200">ตัวคุณ (กล้องสด)</span>
+                        <span class="text-xs font-semibold text-slate-200">กล้องของคุณ (สด)</span>
                     </div>
                 </div>
 
@@ -142,8 +139,8 @@
             <!-- Dashboard Control Actions -->
             <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="text-center sm:text-left">
-                    <h3 class="text-sm font-semibold text-slate-200">เริ่มต้นแชทสุ่มวิดีโอ</h3>
-                    <p class="text-xs text-slate-400">เมื่อเพื่อนในห้องวางสาย ระบบจะพร้อมกดสุ่มจับคู่ต่อทันที</p>
+                    <h3 class="text-sm font-semibold text-slate-200">ศูนย์ควบคุม WebRTC</h3>
+                    <p class="text-xs text-slate-400">ระบบจะทำการจับคู่กับผู้ใช้ที่กดสุ่มเข้ามาในเวลาไล่เลี่ยกัน</p>
                 </div>
                 
                 <div class="flex items-center space-x-3 w-full sm:w-auto">
@@ -158,12 +155,12 @@
                     <!-- Core Random Match Action -->
                     <button id="btn-start-match" class="flex-grow sm:flex-grow-0 px-8 py-3.5 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 hover:opacity-95 text-white font-bold rounded-2xl transition duration-150 shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-2">
                         <i class="fa-solid fa-shuffle"></i>
-                        <span id="btn-match-text">ค้นหาเพื่อนใหม่ (Omi Match)</span>
+                        <span>สุ่มจับคู่เลย! (Omi Live)</span>
                     </button>
                     <!-- Skip/Disconnect Action -->
-                    <button id="btn-skip" class="hidden px-6 py-3.5 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 border border-slate-700 text-slate-300 font-semibold rounded-2xl transition duration-150 flex items-center justify-center space-x-2">
+                    <button id="btn-skip" class="hidden px-6 py-3.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-semibold rounded-2xl transition duration-150 flex items-center justify-center space-x-2">
                         <i class="fa-solid fa-forward-step"></i>
-                        <span>ข้าม / ถัดไป</span>
+                        <span>วางสายและสุ่มต่อ</span>
                     </button>
                 </div>
             </div>
@@ -176,14 +173,14 @@
             <div class="p-4 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-comments text-rose-500"></i>
-                    <span class="text-sm font-bold">กล่องพิมพ์แชทข้อความ</span>
+                    <span class="text-sm font-bold">กล่องแชทข้อความ</span>
                 </div>
-                <span class="text-[10px] text-slate-500 font-mono">P2P ENCRYPTED</span>
+                <span id="chat-mode" class="text-[10px] text-slate-500 font-mono">STANDBY</span>
             </div>
 
             <!-- Chat Message Feed -->
             <div id="chat-messages-container" class="flex-grow p-4 overflow-y-auto space-y-3 chat-scroll">
-                <div class="text-center py-8 text-slate-600 flex flex-col items-center">
+                <div id="welcome-chat-text" class="text-center py-8 text-slate-600 flex flex-col items-center">
                     <i class="fa-solid fa-comment-dots text-2xl mb-2"></i>
                     <p class="text-xs">แชทยังว่างเปล่า... เริ่มจับคู่เพื่อคุยเลย!</p>
                 </div>
@@ -191,7 +188,7 @@
 
             <!-- Chat Form Box -->
             <form id="chat-form" class="p-3 bg-slate-900/60 border-t border-slate-800 flex items-center space-x-2">
-                <input type="text" id="chat-input" placeholder="พิมพ์ข้อความคุยได้ที่นี่..." class="flex-grow bg-slate-950 text-xs border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 text-slate-100 placeholder-slate-600" disabled>
+                <input type="text" id="chat-input" placeholder="เชื่อมต่อก่อนเพื่อพิมพ์คุย..." class="flex-grow bg-slate-950 text-xs border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 text-slate-100 placeholder-slate-600" disabled>
                 <button type="submit" id="btn-send" class="p-3 bg-rose-500 hover:bg-rose-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl transition duration-150 flex items-center justify-center" disabled>
                     <i class="fa-solid fa-paper-plane text-sm"></i>
                 </button>
@@ -200,67 +197,92 @@
 
     </main>
 
-    <!-- Footer Disclaimer -->
+    <!-- Footer -->
     <footer class="border-t border-slate-900 bg-slate-950 py-3 text-center">
         <p class="text-[10px] text-slate-600">
-            โปรดเคารพเพื่อนร่วมห้องและปฏิบัติตนอย่างเหมาะสม การกระทำที่ขัดต่อกฎหมายและนโยบายชุมชนจะถูกระงับสิทธิ์ทันที
+            วิเคราะห์สัญญาณแบบ Peer-to-Peer ตรงด้วย Google WebRTC STUN และเซสชันจำลองพิเศษ
         </p>
     </footer>
 
-    <!-- Logic Engine -->
+    <!-- Firebase & WebRTC Matchmaking Script -->
     <script>
-        // กำหนดค่าจำลองของแอป Firebase (สุ่มขึ้นมาแบบ Stateless เพื่อไม่ต้องการเขียน Firestore หลังบ้านตัวจริง)
-        // หรือจะสร้างการสื่อสารแบบสัญญารับส่งผ่าน WebRTC Broker
-        const firebaseConfig = {
-            apiKey: "AIzaSyFakeKey_NoRealApiKeyNeededForSimpleMatch",
-            authDomain: "omi-match-p2p.firebaseapp.com",
-            projectId: "omi-match-p2p",
-            storageBucket: "omi-match-p2p.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:1234:web:abcd"
-        };
+        // ดึงการตั้งค่า Firebase จริงๆ จาก Global Environment ของระบบจำลอง
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'omi-match-p2p';
         
-        // เริ่มต้น Firebase แอพแบบคลุมสัญญารวม
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // ตัวแปรควบคุมการสนทนา
+        // ตัวแปรด้านการคุยกล้องและการจัดการสิทธิ์
         let localStream = null;
-        let peer = null;
-        let currentCall = null;
-        let currentConnection = null;
+        let peerConnection = null;
+        let myUid = null;
+        let currentRoomId = null;
+        let roomListener = null;
+        let chatListener = null;
         let isMuted = false;
         let isCamOff = false;
-        let myId = '';
-        let myRole = ''; // 'host' หรือ 'guest'
-        let currentRoomId = null;
 
-        // ดึงอิลิเมนต์จาก DOM
+        // สเปคเซิร์ฟเวอร์ STUN ในการเจาะช่อง NAT (ของ Google ใช้งานได้ฟรี เสถียรที่สุด)
+        const iceConfiguration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        };
+
+        // DOM Elements
         const localVideo = document.getElementById('local-video');
         const remoteVideo = document.getElementById('remote-video');
         const localPlaceholder = document.getElementById('local-placeholder');
         const remotePlaceholder = document.getElementById('remote-placeholder');
+        const connectionStatus = document.getElementById('connection-status');
         
         const btnToggleMic = document.getElementById('btn-toggle-mic');
         const btnToggleCam = document.getElementById('btn-toggle-cam');
         const btnStartMatch = document.getElementById('btn-start-match');
-        const btnMatchText = document.getElementById('btn-match-text');
         const btnSkip = document.getElementById('btn-skip');
         const matchingOverlay = document.getElementById('matching-overlay');
+        const matchingStatusText = document.getElementById('matching-status-text');
         
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatContainer = document.getElementById('chat-messages-container');
-        const remoteName = document.getElementById('remote-name');
+        const chatMode = document.getElementById('chat-mode');
+        const remoteLabel = document.getElementById('remote-label');
 
-        // เริ่มต้นและขอสิทธิ์กล้องตั้งแต่โหลดเว็บสำเร็จ
+        // ตรวจสอบและลงทะเบียนเข้าสู่ระบบแบบไม่เปิดเผยตัวตน (RULE 3)
         window.addEventListener('DOMContentLoaded', async () => {
-            await setupLocalCamera();
-            initPeer();
+            await initAuthAndCamera();
         });
 
-        // 1. ตั้งค่าการดึงวิดีโอจากกล้องของตนเอง
-        async function setupLocalCamera() {
+        async function initAuthAndCamera() {
+            try {
+                connectionStatus.textContent = "กำลังลงทะเบียนตัวตน...";
+                
+                // ลงทะเบียนและยืนยันตัวตนก่อนเพื่ออนุญาตเข้าถึง Database (RULE 3)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await auth.signInWithCustomToken(__initial_auth_token);
+                } else {
+                    await auth.signInAnonymously();
+                }
+
+                myUid = auth.currentUser.uid;
+                connectionStatus.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full"></span> ฐานข้อมูลเชื่อมต่อแล้ว`;
+                connectionStatus.className = "text-xs font-medium text-emerald-400";
+                
+                // ขออนุญาตใช้งานกล้องและไมค์ทันที
+                await requestCameraPermission();
+            } catch (err) {
+                console.error("Auth / Camera Init Error:", err);
+                connectionStatus.textContent = "เชื่อมต่อระบบระบุตัวตนขัดข้อง";
+                connectionStatus.className = "text-xs font-medium text-rose-400";
+            }
+        }
+
+        async function requestCameraPermission() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480, facingMode: "user" },
@@ -269,59 +291,12 @@
                 localVideo.srcObject = localStream;
                 localPlaceholder.classList.add('hidden');
             } catch (err) {
-                console.error("Camera permissions rejected: ", err);
-                alert("ไม่สามารถเข้าถึงกล้องและไมโครโฟนได้ กรุณาเปิดสิทธิ์ของเบราว์เซอร์เพื่อเริ่มเล่นสุ่มจับคู่กล้อง!");
+                console.error("Camera Rejected: ", err);
+                addSystemMessage("ไม่สามารถเปิดใช้งานกล้องได้ โปรดอนุญาตสิทธิ์ที่แถบ URL ของคุณ");
             }
         }
 
-        // 2. เริ่มต้น PeerJS คลื่นสัญญาณ P2P
-        function initPeer() {
-            // สร้าง ID สุ่มสำหรับผู้ใช้งานคนนั้นๆ
-            myId = 'omi-user-' + Math.random().toString(36).substr(2, 9);
-            
-            // เปิดใช้บริการ Cloud Server ฟรีของ PeerJS
-            peer = new Peer(myId, {
-                debug: 1
-            });
-
-            peer.on('open', (id) => {
-                console.log('PeerJS ลงทะเบียนสำเร็จด้วยไอดี:', id);
-            });
-
-            // ตรวจจับสายที่โทรเข้ามา (รับสายอัตโนมัติ)
-            peer.on('call', (call) => {
-                if (!localStream) return;
-                
-                console.log("มีสายเรียกเข้าแบบสุ่มจากคู่อื่น...");
-                call.answer(localStream);
-                currentCall = call;
-
-                call.on('stream', (remoteStream) => {
-                    remoteVideo.srcObject = remoteStream;
-                    remotePlaceholder.classList.add('hidden');
-                    matchingOverlay.classList.add('hidden');
-                    btnStartMatch.classList.add('hidden');
-                    btnSkip.classList.remove('hidden');
-                    chatInput.disabled = false;
-                    document.getElementById('btn-send').disabled = false;
-                    remoteName.textContent = "เพื่อนแปลกหน้า (ออนไลน์สด)";
-                    
-                    addSystemMessage("ระบบจับคู่สำเร็จแล้ว! ส่งคำทักทายหากันได้เลย");
-                });
-
-                call.on('close', () => {
-                    disconnectMatch();
-                });
-            });
-
-            // จับการเชื่อมต่อเพื่อส่งข้อความตัวแักษรแชท (Data Connection)
-            peer.on('connection', (conn) => {
-                currentConnection = conn;
-                setupChatConnection(conn);
-            });
-        }
-
-        // 3. ปรับสลับเสียงไมค์ของตนเอง
+        // จัดการสลับเปิด/ปิดเสียงไมโครโฟน
         btnToggleMic.addEventListener('click', () => {
             if (localStream) {
                 isMuted = !isMuted;
@@ -330,7 +305,7 @@
             }
         });
 
-        // 4. ปรับสลับเปิดปิดกล้องตนเอง
+        // จัดการสลับเปิด/ปิดการฉายภาพกล้อง
         btnToggleCam.addEventListener('click', () => {
             if (localStream) {
                 isCamOff = !isCamOff;
@@ -345,177 +320,334 @@
             }
         });
 
-        // 5. ค้นหาและจับคู่การสนทนา (Matchmaking Engine)
-        btnStartMatch.addEventListener('click', startOmiMatch);
-        btnSkip.addEventListener('click', () => {
-            disconnectMatch();
-            startOmiMatch();
-        });
+        // ดำเนินการสุ่มและจับคู่ผ่านฐานข้อมูลแบบ Real-time (RULE 1, RULE 2)
+        btnStartMatch.addEventListener('click', startMatchmaking);
+        btnSkip.addEventListener('click', skipConnection);
 
-        // ฟังก์ชันระบบสุ่มจับคู่อัจฉริยะ (Smart Peer-to-Peer Match)
-        async function startOmiMatch() {
+        async function startMatchmaking() {
             if (!localStream) {
-                alert("กรุณาเปิดการเข้าถึงกล้องและอนุญาตสิทธิ์ก่อนสุ่มคุยครับ");
-                return;
+                await requestCameraPermission();
+                if (!localStream) return;
             }
 
             matchingOverlay.classList.remove('hidden');
-            btnMatchText.textContent = "กำลังค้นหาคนเหงา...";
-
+            matchingStatusText.textContent = "กำลังค้นหาคู่ออนไลน์...";
+            
             try {
-                // จำลองระบบ Matchmaking ในกรณีที่ผู้ใช้อยากสุ่มจับคู่แบบทันใจบน Client-side:
-                // ระบบจะสแกนหา 'ห้องเหงา' (Lobby Room) ที่มีคนเปิดขึ้นและไม่มีคู่สนทนาใน Firebase Firestore
-                // โครงสร้างเส้นทางตามกฎเหล็กความปลอดภัย: /artifacts/{appId}/public/data/lobbies
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'omi-match-p2p';
-                const lobbyRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lobbies');
+                // อ้างอิง Path ของ Public Data ตามกฎเหล็ก (RULE 1)
+                // Path: /artifacts/{appId}/public/data/matchmaking
+                const matchmakingCollection = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking');
 
-                // ค้นหาห้องที่ยังต้องการผู้เข้าร่วม ('waiting' state)
-                const snapshot = await lobbyRef.where('status', '==', 'waiting').limit(1).get();
+                // ดึงรายชื่อห้องทั้งหมดเพื่อหาห้องที่กำลังรอ (RULE 2: ห้าม query ซับซ้อน ให้กรองใน Memory)
+                const snapshot = await matchmakingCollection.get();
+                const now = Date.now();
+                let foundRoom = null;
 
-                if (!snapshot.empty) {
-                    // 1. มีผู้ใช้เปิดห้องรออยู่ก่อนแล้ว -> เราทำหน้าที่เป็น 'แขก' (Guest) เข้าไปประกบ
-                    const roomDoc = snapshot.docs[0];
-                    const roomData = roomDoc.data();
-                    currentRoomId = roomDoc.id;
-                    myRole = 'guest';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // กรองใน JS Memory: ต้องเป็นห้องที่รออยู่, ไม่ใช่ห้องของเราเอง, และอัปเดตสถานะไม่เกิน 1 นาที (ป้องกันห้องร้าง)
+                    if (data.status === 'waiting' && data.hostId !== myUid && (now - data.updatedAt < 60000)) {
+                        foundRoom = { id: doc.id, ...data };
+                    }
+                });
 
-                    // บันทึกเปลี่ยนสถานะห้องเป็น "คู่คุยเต็มแล้ว" (occupied)
-                    await lobbyRef.doc(currentRoomId).update({
-                        status: 'occupied',
-                        guestPeerId: myId
-                    });
-
-                    // สร้าง Connection ส่งสัญญากล้องคุยแบบ P2P ไปหา Host ที่สร้างห้องไว้
-                    const hostPeerId = roomData.hostPeerId;
-                    callPeer(hostPeerId);
+                if (foundRoom) {
+                    // หากเจอห้องว่าง -> เราทำหน้าที่เป็น "ผู้ร่วมสาย (Guest)" เข้าไปแต่งตั้งการจอยแชท
+                    currentRoomId = foundRoom.id;
+                    matchingStatusText.textContent = "พบคู่สายแล้ว! กำลังเชื่อมโยงกล้อง...";
                     
+                    await matchmakingCollection.doc(currentRoomId).update({
+                        guestId: myUid,
+                        status: 'matched',
+                        updatedAt: now
+                    });
+
+                    // สร้าง Connection และตอบรับการสแกน Offer ของ Host
+                    await joinExistingRoom(currentRoomId);
                 } else {
-                    // 2. ไม่มีห้องว่างรออยู่เลย -> เราเปิดห้องใหม่กลายเป็น 'เจ้าบ้าน' (Host) เพื่อรอคนมาจอยสุ่ม
-                    currentRoomId = 'room-' + Math.random().toString(36).substr(2, 9);
-                    myRole = 'host';
-
-                    await lobbyRef.doc(currentRoomId).set({
-                        hostPeerId: myId,
-                        guestPeerId: null,
+                    // หากยังไม่มีใครว่าง -> เราสร้างห้องใหม่และขึ้นสถานะ "สแตนด์บาย (Host)" รอคอย
+                    currentRoomId = 'room_' + myUid; // ตั้งชื่อห้องตาม ID เราเพื่อความจำง่าย
+                    
+                    await matchmakingCollection.doc(currentRoomId).set({
+                        hostId: myUid,
+                        guestId: null,
                         status: 'waiting',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        updatedAt: now,
+                        offer: null,
+                        answer: null,
+                        hostCandidates: [],
+                        guestCandidates: []
                     });
 
-                    // คอยตรวจเช็คว่าห้องมี Guest เข้ามาร่วมหรือไม่ผ่าน Real-time listener
-                    const unsubscribe = lobbyRef.doc(currentRoomId).onSnapshot((doc) => {
-                        const data = doc.data();
-                        if (data && data.status === 'occupied' && data.guestPeerId) {
-                            console.log("พบผู้ใช้ Guest เข้ามาร่วมห้องแล้ว:", data.guestPeerId);
-                            
-                            // โทรหาผู้ใช้คนนั้น
-                            callPeer(data.guestPeerId);
-                            unsubscribe(); // หยุดการฟังความเปลี่ยนแปลงหลังจากจับคู่ได้
-                        }
-                    }, (err) => {
-                        console.error("Firestore snapshot error: ", err);
-                    });
+                    // ฟังก์ชันคอยฟังว่ามีคนมาร่วมหรือยัง (Real-time tracking)
+                    listenToRoomChanges(currentRoomId);
                 }
 
             } catch (err) {
-                console.warn("เซิร์ฟเวอร์ฐานข้อมูลยังไม่พร้อมใช้งาน ระบบจะทดลองเข้าสู่โหมดจำลองจับคู่คู่กรณีให้คุณสัมผัสการแชทคู่กล้องเสมือนจริงในทันที (Mock Mode)");
-                mockSimulatedCall();
+                console.error("Matchmaking process failed:", err);
+                addSystemMessage("ระบบจับคู่ขัดข้อง กำลังเข้าสู่โหมดจำลองแชททดสอบให้คุณ...");
+                runMockSession();
             }
         }
 
-        // การสร้างสายโทรหาปลายทาง (Call & Connection creation)
-        function callPeer(targetPeerId) {
-            // โทรออกวิดีโอคอลหาเป้าหมาย
-            const call = peer.call(targetPeerId, localStream);
-            currentCall = call;
+        // ==================== เอนจิ้นโครงข่าย P2P ด้วย WebRTC Native ====================
 
-            call.on('stream', (remoteStream) => {
-                remoteVideo.srcObject = remoteStream;
+        // [กระบวนการสำหรับ Host] คอยฟังการสตรีมเมื่อมีผู้เข้าร่วมจอยห้อง
+        function listenToRoomChanges(roomId) {
+            const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(roomId);
+            
+            roomListener = roomRef.onSnapshot(async (snapshot) => {
+                const data = snapshot.data();
+                if (!data) return;
+
+                // เมื่อ Guest กดเข้าห้องมาแล้ว (status = matched)
+                if (data.status === 'matched' && data.guestId && !peerConnection) {
+                    matchingStatusText.textContent = "พบคู่สายคนใหม่แล้ว! กำลังคุยสาย...";
+                    await createHostConnection(roomId, data.guestId);
+                }
+
+                // เมื่อ Guest ส่ง Candidate พิเศษเข้ามา
+                if (peerConnection && data.guestCandidates && data.guestCandidates.length > 0) {
+                    data.guestCandidates.forEach(async (candidateData) => {
+                        try {
+                            const candidate = new RTCIceCandidate(candidateData);
+                            await peerConnection.addIceCandidate(candidate);
+                        } catch (e) {}
+                    });
+                }
+
+                // กรณีโดนวางสาย / วิ่งหนีแชท
+                if (data.status === 'disconnected') {
+                    handlePartnerDisconnect();
+                }
+            }, (error) => {
+                console.error("Room listener failure:", error);
+            });
+        }
+
+        // [สิทธิ Host] สร้างสายหลักและส่ง SDP Offer
+        async function createHostConnection(roomId, guestId) {
+            const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(roomId);
+            
+            peerConnection = new RTCPeerConnection(iceConfiguration);
+
+            // บังคับยิงแทร็กวิดีโอและเสียงกล้องเราไป
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // ตรวจจับสัญญาณผู้เข้าร่วมและจัดวางลง Remote Video
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
                 remotePlaceholder.classList.add('hidden');
                 matchingOverlay.classList.add('hidden');
                 btnStartMatch.classList.add('hidden');
                 btnSkip.classList.remove('hidden');
+                
                 chatInput.disabled = false;
                 document.getElementById('btn-send').disabled = false;
-                remoteName.textContent = "เพื่อนต่างจังหวัด (ออนไลน์สด)";
-                
-                addSystemMessage("เชื่อมต่อคุยสายแล้ว! แชทกันได้เลย");
+                chatMode.textContent = "LIVE CALLED";
+                remoteLabel.textContent = "คู่ออนไลน์ (สด)";
+            };
+
+            // แลกเปลี่ยนตำแหน่งไอพีข้ามเซิร์ฟเวอร์ (ICE Candidates)
+            peerConnection.onicecandidate = async (event) => {
+                if (event.candidate) {
+                    await roomRef.update({
+                        hostCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON())
+                    });
+                }
+            };
+
+            // สร้าง SDP Offer
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            await roomRef.update({
+                offer: { type: offer.type, sdp: offer.sdp }
             });
 
-            call.on('close', () => {
-                disconnectMatch();
+            // คอยตรวจจับว่า Guest ตอบรับ Answer หรือยัง
+            const unsubscribeAnswer = roomRef.onSnapshot(async (snapshot) => {
+                const data = snapshot.data();
+                if (data && data.answer && peerConnection.signalingState !== "stable") {
+                    const rtcAnswer = new RTCSessionDescription(data.answer);
+                    await peerConnection.setRemoteDescription(rtcAnswer);
+                    unsubscribeAnswer(); // คลายการดักฟังลดการประมวลผลซ้ำซ้อน
+                }
             });
 
-            // สร้างการเชื่อมต่อส่งข้อความ
-            const conn = peer.connect(targetPeerId);
-            currentConnection = conn;
-            setupChatConnection(conn);
+            // สแตนด์บายสร้างระบบพิมพ์คุยในห้อง
+            initChatSystem(roomId);
         }
 
-        // ตั้งค่ากล่องข้อความ P2P
-        function setupChatConnection(conn) {
-            conn.on('open', () => {
-                console.log("พร้อมส่งข้อความแชทตรงกับคู่ของคุณแล้ว");
-            });
-            conn.on('data', (data) => {
-                addMessage(data.text, 'remote');
-            });
-        }
-
-        // 6. ถอดถอนการสุ่มหรือข้ามคู่สนทนาเก่า (Disconnect)
-        async function disconnectMatch() {
-            if (currentCall) currentCall.close();
-            if (currentConnection) currentConnection.close();
+        // [สิทธิ Guest] ตรวจจับข้อมูล Offer และส่ง SDP Answer กลับหาเจ้าบ้าน
+        async function joinExistingRoom(roomId) {
+            const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(roomId);
             
-            // ปล่อยกล้องหน้าฝั่งปลายทางและรีเซ็ตค่า UI
+            peerConnection = new RTCPeerConnection(iceConfiguration);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+                remotePlaceholder.classList.add('hidden');
+                matchingOverlay.classList.add('hidden');
+                btnStartMatch.classList.add('hidden');
+                btnSkip.classList.remove('hidden');
+                
+                chatInput.disabled = false;
+                document.getElementById('btn-send').disabled = false;
+                chatMode.textContent = "LIVE CALLED";
+                remoteLabel.textContent = "คู่ออนไลน์ (สด)";
+            };
+
+            peerConnection.onicecandidate = async (event) => {
+                if (event.candidate) {
+                    await roomRef.update({
+                        guestCandidates: firebase.firestore.FieldValue.arrayUnion(event.candidate.toJSON())
+                    });
+                }
+            };
+
+            // นำเข้าข้อมูล Offer ดั้งเดิมของ Host เพื่อประเมิน
+            const roomSnapshot = await roomRef.get();
+            const roomData = roomSnapshot.data();
+            
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+
+            // เจเนอเรท Answer ของฝั่งเราตอบกลับ
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            await roomRef.update({
+                answer: { type: answer.type, sdp: answer.sdp }
+            });
+
+            // คอยรับพิกัด ICE จาก Host
+            roomListener = roomRef.onSnapshot((snapshot) => {
+                const data = snapshot.data();
+                if (data && data.hostCandidates && data.hostCandidates.length > 0) {
+                    data.hostCandidates.forEach(async (candidateData) => {
+                        try {
+                            const candidate = new RTCIceCandidate(candidateData);
+                            await peerConnection.addIceCandidate(candidate);
+                        } catch (e) {}
+                    });
+                }
+
+                if (data && data.status === 'disconnected') {
+                    handlePartnerDisconnect();
+                }
+            });
+
+            initChatSystem(roomId);
+        }
+
+        // ==================== ระบบแชทพิมพ์สนทนา Real-time ====================
+
+        function initChatSystem(roomId) {
+            const chatCollection = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(roomId).collection('chats');
+            
+            // ยกเลิก Listener แชทห้องเก่าก่อนหน้าหากมี
+            if (chatListener) chatListener();
+
+            chatListener = chatCollection.orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        // คัดแยกฝั่งผู้พิมพ์ข้อความ
+                        const sender = data.senderId === myUid ? 'local' : 'remote';
+                        addMessage(data.text, sender);
+                    }
+                });
+            }, (error) => {
+                console.error("Chat sync error: ", error);
+            });
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text || !currentRoomId) return;
+
+            try {
+                const chatCollection = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(currentRoomId).collection('chats');
+                
+                await chatCollection.add({
+                    senderId: myUid,
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                chatInput.value = '';
+            } catch (err) {
+                console.error("Send message error:", err);
+            }
+        });
+
+        // ==================== การปิดสาย / คาลิเบรตข้ามอุปกรณ์ ====================
+
+        async function skipConnection() {
+            if (currentRoomId) {
+                try {
+                    const roomRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('matchmaking').doc(currentRoomId);
+                    await roomRef.update({ status: 'disconnected' });
+                } catch (e) {}
+            }
+            cleanUpWebRTC();
+            // วนไปค้นหาเพื่อสุ่มห้องต่อทันที
+            startMatchmaking();
+        }
+
+        function handlePartnerDisconnect() {
+            addSystemMessage("คู่สนทนาของคุณได้วางสายไปแล้ว");
+            cleanUpWebRTC();
+        }
+
+        function cleanUpWebRTC() {
+            // ปิดพิกัดหูฟังและสตรีม WebRTC
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            if (roomListener) {
+                roomListener();
+                roomListener = null;
+            }
+
+            if (chatListener) {
+                chatListener();
+                chatListener = null;
+            }
+
             remoteVideo.srcObject = null;
             remotePlaceholder.classList.remove('hidden');
             matchingOverlay.classList.add('hidden');
             btnStartMatch.classList.remove('hidden');
             btnSkip.classList.add('hidden');
+            
             chatInput.disabled = true;
             document.getElementById('btn-send').disabled = true;
-            btnMatchText.textContent = "ค้นหาเพื่อนใหม่ (Omi Match)";
-            remoteName.textContent = "เพื่อนที่เพิ่งจับคู่";
-
-            // เคลียร์ประวัติการพิมพ์แชทเก่าออก
+            chatMode.textContent = "STANDBY";
+            remoteLabel.textContent = "เพื่อนปลายทาง";
+            
             chatContainer.innerHTML = `
-                <div class="text-center py-8 text-slate-600 flex flex-col items-center">
+                <div id="welcome-chat-text" class="text-center py-8 text-slate-600 flex flex-col items-center">
                     <i class="fa-solid fa-comment-dots text-2xl mb-2"></i>
                     <p class="text-xs">แชทยังว่างเปล่า... เริ่มจับคู่เพื่อคุยเลย!</p>
                 </div>
             `;
-
-            // เคลียร์ข้อมูลห้องในฐานข้อมูล
-            if (currentRoomId) {
-                try {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'omi-match-p2p';
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lobbies').doc(currentRoomId).delete();
-                } catch (e) {}
-                currentRoomId = null;
-            }
         }
 
-        // 7. จัดการระบบพิมพ์ข้อความแชท
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = chatInput.value.trim();
-            if (!text) return;
+        // ==================== กล่องแสดงผลลัพธ์ข้อมูลบนหน้าจอ ====================
 
-            // ส่งข้อมูลผ่าน PeerJS WebRTC Connection
-            if (currentConnection && currentConnection.open) {
-                currentConnection.send({ text: text });
-            }
-
-            addMessage(text, 'local');
-            chatInput.value = '';
-        });
-
-        // แสดงข้อความในฝั่งกล่องแชท
         function addMessage(text, sender) {
-            // เอาข้อความต้อนรับหรือช่องว่างออกเป็นอันดับแรก
-            if (chatContainer.querySelector('.fa-comment-dots')) {
-                chatContainer.innerHTML = '';
-            }
+            const welcomeText = document.getElementById('welcome-chat-text');
+            if (welcomeText) welcomeText.remove();
 
             const bubble = document.createElement('div');
             bubble.className = `flex flex-col ${sender === 'local' ? 'items-end' : 'items-start'}`;
@@ -535,7 +667,6 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // แสดงข้อความประกาศแจ้งเตือนของระบบ
         function addSystemMessage(text) {
             const announcement = document.createElement('div');
             announcement.className = "text-center my-2";
@@ -548,9 +679,8 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // ระบบจำลองสถานการณ์คุย (Mock Call Simulation) กรณีเปิดใช้เครื่องทดสอบคนเดียว
-        // เพื่อให้เห็นว่าระบบสุ่มวิดีโอหน้าตาและการทำงานครบเครื่องแบบเรียลไทม์เป็นอย่างไร
-        function mockSimulatedCall() {
+        // [แผนสำรอง] โหมดจำลองเพื่อเทส UI กรณีเปิดเครื่องเดียว
+        function runMockSession() {
             setTimeout(() => {
                 matchingOverlay.classList.add('hidden');
                 btnStartMatch.classList.add('hidden');
@@ -558,20 +688,18 @@
                 remotePlaceholder.classList.add('hidden');
                 chatInput.disabled = false;
                 document.getElementById('btn-send').disabled = false;
-                remoteName.textContent = "น้องไอซ์ (Omi คาสเตอร์)";
+                remoteLabel.textContent = "น้องบีม (Mock บอทจำลอง)";
 
-                // จำลองวิดีโอจากเว็บแคมของตนเองมาแสดงในกล่องคนอื่นเพื่อความเห็นภาพการคุยสายสด
                 if (localStream) {
-                    remoteVideo.srcObject = localStream;
+                    remoteVideo.srcObject = localStream; // นำภาพของคุณสะท้อนเป็นฝ่ายตรงข้าม
                 }
 
-                addSystemMessage("ระบบจำลองสุ่มคู่สำเร็จเพื่อการทดสอบ (Mock Session)");
+                addSystemMessage("เชื่อมต่อคู่สายจำลอง (ไม่พบคู่อื่นในฐานข้อมูลปัจจุบัน)");
                 
-                // แชทอัตโนมัติจากฝั่งเพื่อนที่จับคู่ได้
                 setTimeout(() => {
-                    addMessage("สวัสดีค่า! ยินดีที่ได้คุยด้วยนะคะ สุ่มเจอจากที่ไหนเอ่ย 😊", "remote");
+                    addMessage("ยินดีต้อนรับค่า! ระบบกล้องและเสียง WebRTC พร้อมทำงานแล้ว 😊", "remote");
                 }, 1500);
-            }, 3000); // จำลองเวลาค้นหา 3 วินาที
+            }, 3000);
         }
     </script>
 </body>
