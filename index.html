@@ -3,534 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant Raw Share - เครื่องมือแชร์โค้ดและข้อความดิบ</title>
-    <!-- Tailwind CSS for Beautiful Modern UI -->
+    <title>ระบบแปลภาษามือ Real-time AI (No API Key Required)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK Libraries (สำหรับฟังก์ชันเก็บข้อมูลขึ้น Cloud ถ้าต้องการ) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // กำหนดค่า Firebase Config เผื่อกรณีที่คุณต้องการเชื่อมต่อ Firestore Database ในอนาคต
-        // หากต้องการใช้งาน Cloud Saving จริง ให้แก้ค่าด้านล่างนี้ และตั้งค่า Firestore Security Rules
-        const firebaseConfig = {
-            apiKey: "", // ใส่ API Key ของคุณที่นี่
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: ""
-        };
-
-        // ตรวจสอบความถูกต้องและเริ่มใช้งาน Firebase (ทำงานแบบปลอดภัย หากยังไม่ได้กรอก config)
-        let db = null;
-        let auth = null;
-        let isFirebaseActive = false;
-
-        if (firebaseConfig.apiKey) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                isFirebaseActive = true;
-                
-                // ลงชื่อเข้าใช้งานแบบนิรนามอัตโนมัติ เพื่อสิทธิ์เข้าถึงฐานข้อมูลอย่างปลอดภัย
-                signInAnonymously(auth).catch((error) => console.warn("Firebase Auth Error:", error));
-            } catch (e) {
-                console.error("Firebase Initialization Failed:", e);
-            }
-        }
-        
-        window.db = db;
-        window.isFirebaseActive = isFirebaseActive;
-    </script>
+    <!-- MediaPipe Tasks Vision Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/index_bundle.js" crossorigin="anonymous"></script>
 
     <style>
         body {
-            font-family: 'Noto Sans Thai', sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
+            font-family: 'Sarabun', sans-serif;
         }
-        .code-font {
-            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
         }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
         }
-        ::-webkit-scrollbar-track {
-            background: #1e293b;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 3px;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-
-        /* สไตล์สำหรับโหมด Raw ดิบๆ ไร้การปรุงแต่ง */
-        body.raw-layout {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            font-family: 'Fira Code', monospace !important;
-            margin: 0 !important;
-            padding: 16px !important;
-            line-height: 1.5;
-            font-size: 14px;
-        }
-        body.raw-layout pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
 
-    <!-- ========================================== -->
-    <!-- 1. หน้าแอปพลิเคชันหลัก (Editor Mode) -->
-    <!-- ========================================== -->
-    <div id="editor-view" class="flex flex-col flex-grow">
-        <!-- Navigation Bar -->
-        <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2.5 rounded-lg flex items-center justify-center text-white">
-                    <i class="fa-solid fa-code text-xl"></i>
+    <!-- Header -->
+    <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-hands text-xl text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-white tracking-wide">RAW PASTEBIN</h1>
-                    <p class="text-xs text-slate-400">เก็บข้อมูลและแชร์ข้อมูลดิบแบบทันใจ</p>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                        On-Device Sign Language Interpreter
+                    </h1>
+                    <p class="text-xs text-slate-400">แปลภาษามือเรียลไทม์ 100% บนเครื่องผู้ใช้ ไม่ต้องเชื่อมต่อเซิร์ฟเวอร์</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="clearEditor()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                    <i class="fa-solid fa-trash-can"></i> ล้างหน้าจอ
-                </button>
-                <div class="h-6 w-px bg-slate-800 mx-2"></div>
-                <span id="cloud-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-medium">
-                    <i class="fa-solid fa-cloud-slash mr-1"></i> Local Only
+            <div class="flex items-center space-x-2">
+                <span id="ai-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span class="w-1.5 h-1.5 mr-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+                    กำลังโหลด AI Model...
                 </span>
             </div>
-        </nav>
+        </div>
+    </header>
 
-        <!-- Main Workspace -->
-        <main class="flex-grow flex flex-col lg:flex-row p-6 gap-6 max-w-7xl w-full mx-auto">
-            <!-- Left Side: Editor Area -->
-            <div class="flex-grow flex flex-col bg-slate-900 rounded-xl border border-slate-800 shadow-2xl overflow-hidden min-h-[450px]">
-                <!-- Editor Header -->
-                <div class="bg-slate-950/60 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                        <span class="text-xs text-slate-400 ml-2 font-mono">index.txt</span>
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Camera and Tracking Visualizer (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-4">
+            
+            <!-- Camera Viewport Card -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-4 shadow-xl relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-video text-indigo-500"></i>
+                        <span class="text-sm font-semibold text-slate-300">กล้องตรวจจับพิกัดนิ้วมือ</span>
                     </div>
-                    <span id="char-count" class="text-xs text-slate-500 font-mono">0 ตัวอักษร</span>
+                    <span id="fps-counter" class="text-xs font-mono text-slate-500">FPS: --</span>
                 </div>
-                <!-- Text Area Input -->
-                <div class="flex-grow flex relative">
-                    <!-- Line Numbers Display -->
-                    <div id="line-numbers" class="w-12 bg-slate-950/30 text-right pr-3 pt-4 select-none text-slate-600 font-mono text-sm border-r border-slate-800/50 leading-6">
-                        1
-                    </div>
-                    <!-- Real Textarea -->
-                    <textarea id="editor" oninput="handleInput()" placeholder="พิมพ์ หรือวางข้อมูลที่นี่เพื่อแชร์..." class="flex-grow bg-transparent p-4 outline-none resize-none text-slate-100 code-font text-sm leading-6 placeholder:text-slate-600"></textarea>
-                </div>
-            </div>
-
-            <!-- Right Side: Action Control Panel -->
-            <div class="w-full lg:w-80 flex flex-col gap-5">
-                <!-- Share options -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-share-nodes text-blue-500"></i> เลือกรูปแบบการแชร์
-                    </h3>
+                
+                <!-- Video/Canvas Container -->
+                <div class="relative aspect-video w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                    <!-- Web Video -->
+                    <video id="webcam" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover transform -scale-x-100 hidden"></video>
                     
-                    <div class="space-y-4">
-                        <!-- Option 1: URL Share (No database required) -->
-                        <div class="p-4 bg-slate-950/40 border border-slate-800 hover:border-slate-700 rounded-lg transition">
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">แชร์ผ่านลิงก์ทันที (Base64)</h4>
-                            <p class="text-xs text-slate-500 mb-3">เข้ารหัสข้อมูลลงใน URL โดยตรง ไม่พึ่งพาคลาวด์ เหมาะสำหรับข้อมูลขนาดสั้น</p>
-                            <button onclick="generateUrlLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-link"></i> สร้างลิงก์ Base64
-                            </button>
+                    <!-- Overlay Canvas for Hand Landmarks skeleton -->
+                    <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-cover transform -scale-x-100"></canvas>
+                    
+                    <!-- Fallback / Initialization State -->
+                    <div id="loading-overlay" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-20">
+                        <div class="relative w-16 h-16 mb-4">
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
                         </div>
-
-                        <!-- Option 2: Cloud Database Storage -->
-                        <div class="p-4 bg-slate-950/40 border border-slate-800 hover:border-slate-700 rounded-lg transition relative overflow-hidden" id="cloud-card">
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">บันทึกผ่านคลาวด์ (Cloud Save)</h4>
-                            <p class="text-xs text-slate-500 mb-3">บันทึกข้อความเก็บไว้ในฐานข้อมูล เหมาะกับโค้ดหรือข้อความขนาดยาว</p>
-                            <button id="cloud-save-btn" onclick="saveToCloud()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 cursor-not-allowed" disabled>
-                                <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกข้อมูลขึ้นคลาวด์
-                            </button>
-                            <!-- Alert overlay if Firebase is not configured -->
-                            <div id="firebase-notice" class="absolute inset-0 bg-slate-950/90 backdrop-blur-[1px] p-4 flex flex-col justify-center items-center text-center">
-                                <p class="text-xs text-slate-300 font-medium mb-1">ต้องการเปิดฟังก์ชันคลาวด์?</p>
-                                <p class="text-[10px] text-slate-500 max-w-[180px] mb-2">แก้ไขโค้ดใส่ Firebase Config เพื่อเก็บข้อมูลแบบถาวรได้</p>
-                                <span class="px-2 py-0.5 bg-slate-800 text-[9px] rounded text-slate-400">ทำงานแบบออฟไลน์แชร์ URL</span>
-                            </div>
-                        </div>
+                        <h3 id="loader-title" class="text-slate-300 font-medium mb-1">กำลังเตรียมระบบตรวจจับ...</h3>
+                        <p id="loader-desc" class="text-xs text-slate-500 max-w-xs">ดาวน์โหลดโมเดลปัญญาประดิษฐ์จาก Google CDN โดยตรง</p>
                     </div>
                 </div>
 
-                <!-- Info panel -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg text-xs text-slate-400 space-y-3">
-                    <h3 class="font-bold text-slate-200">💡 วิธีใช้งานแชร์แบบ RAW</h3>
-                    <p>เมื่อสร้างลิงก์และแชร์ออกไป ผู้ใช้ที่กดเข้ามาจะเจอกับหน้าจอ **Raw Text** ดิบ ๆ โดยไม่เห็นเครื่องมือจัดการใด ๆ เพื่อความรวดเร็วและเป็นส่วนตัว</p>
-                    <p class="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2">พัฒนาไว้ในรูปโครงสร้างไฟล์เดียว (Single File) สะดวกในการนำไป Deploy บน Netlify ฟรี</p>
-                </div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="bg-slate-950/60 border-t border-slate-900 py-4 text-center text-xs text-slate-500 mt-auto">
-            © 2026 Instant Raw Pastebin. โฮสต์ฟรีบน Netlify ได้ทันทีในคลิกเดียว.
-        </footer>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. ส่วนสำหรับ Pop-up Modal แจ้งผลลัพธ์การแชร์ -->
-    <!-- ========================================== -->
-    <div id="share-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="bg-emerald-500/15 text-emerald-400 p-2.5 rounded-lg">
-                    <i class="fa-solid fa-circle-check text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-white">สร้างลิงก์แชร์เสร็จแล้ว!</h3>
-                    <p class="text-xs text-slate-400">เลือกคัดลอกลิงก์ประเภทต่าง ๆ ตามที่ใช้งาน</p>
+                <!-- Hand count display overlay -->
+                <div class="absolute bottom-6 left-6 bg-slate-950/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-full text-xs text-slate-300 flex items-center space-x-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500" id="detect-pulse"></span>
+                    <span id="detected-hands-count">ตรวจไม่พบมือในขณะนี้</span>
                 </div>
             </div>
 
-            <!-- Link boxes inside modal -->
-            <div class="space-y-4 my-6">
-                <!-- 1. Raw Link -->
+            <!-- Fast Calibration / Troubleshooting -->
+            <div class="bg-slate-900/30 border border-slate-800/60 rounded-2xl p-4 text-xs text-slate-400 flex items-start space-x-3">
+                <i class="fa-solid fa-circle-info text-indigo-400 text-sm mt-0.5"></i>
                 <div>
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">1. ลิงก์ดูแบบ RAW ดิบล้วนๆ 📄</label>
-                    <div class="flex gap-2">
-                        <input id="raw-link-input" type="text" readonly class="flex-grow bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-emerald-400 select-all outline-none">
-                        <button onclick="copyToClipboard('raw-link-input')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-4 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0">
-                            <i class="fa-regular fa-copy"></i> คัดลอก
-                        </button>
-                    </div>
+                    <span class="font-semibold text-slate-300 block mb-0.5">ระบบจะเริ่มทำงานอัตโนมัติเมื่อกล้องและโมเดลเสร็จสมบูรณ์</span>
+                    เพื่อให้เกิดความแม่นยำสูงสุด ให้ตั้งมือห่างจากกล้องประมาณ 30-50 เซนติเมตร โดยสลับหงายหลังมือหรือตั้งมือกางออกให้เห็นข้อนิ้วทั้งหมดชัดเจน
                 </div>
-
-                <!-- 2. Editor Link (Optional for preview mode) -->
-                <div>
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">2. ลิงก์หน้ามีดีไซน์ปกติ 🎨</label>
-                    <div class="flex gap-2">
-                        <input id="normal-link-input" type="text" readonly class="flex-grow bg-slate-950/80 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-blue-400 select-all outline-none">
-                        <button onclick="copyToClipboard('normal-link-input')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-4 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0">
-                            <i class="fa-regular fa-copy"></i> คัดลอก
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-2 justify-end pt-2 border-t border-slate-800/60">
-                <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
-                    ปิดหน้าต่าง
-                </button>
             </div>
         </div>
-    </div>
 
-    <!-- Toast Notification system for micro-interactions -->
-    <div id="toast" class="opacity-0 pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/95 border border-slate-800 text-slate-200 px-5 py-2.5 rounded-full shadow-2xl text-xs font-medium transition-all duration-300 flex items-center gap-2 z-50">
-        <i class="fa-solid fa-info text-blue-500"></i> <span id="toast-message">คัดลอกลงคลิปบอร์ดแล้ว</span>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 3. หน้าแสดงผล Raw ดิบแท้ (Raw Viewer View) -->
-    <!-- ========================================== -->
-    <div id="raw-view" class="hidden">
-        <pre id="raw-content"></pre>
-    </div>
-
-
-    <!-- ========================================== -->
-    <!-- 4. Logic & Core JavaScript Section -->
-    <!-- ========================================== -->
-    <script>
-        const editor = document.getElementById('editor');
-        const lineNumbers = document.getElementById('line-numbers');
-        const charCount = document.getElementById('char-count');
-
-        // ฟังก์ชันในการจัดเรียงและแสดงแถวหมายเลขบรรทัด
-        function updateLineNumbers() {
-            const lines = editor.value.split('\n');
-            const lineCount = lines.length;
-            let numHtml = '';
-            for (let i = 1; i <= lineCount; i++) {
-                numHtml += `${i}<br>`;
-            }
-            lineNumbers.innerHTML = numHtml;
-        }
-
-        // จัดการเมื่อกรอกข้อมูล
-        function handleInput() {
-            updateLineNumbers();
-            charCount.innerText = `${editor.value.length} ตัวอักษร`;
+        <!-- Right Column: Current Real-time Word & Dictionary -->
+        <div class="lg:col-span-5 flex flex-col space-y-6">
             
-            // สำรองลง LocalStorage ไว้เพื่อความปลอดภัยกันเว็บหลุด
-            localStorage.setItem('raw_share_backup', editor.value);
-        }
-
-        // โหลดข้อมูลสำรองล่าสุดตอนเปิดเว็บ
-        window.onload = function() {
-            checkUrlMode(); // ตรวจสอบสถานะการแชร์จาก URL ก่อน
-            
-            if (localStorage.getItem('raw_share_backup')) {
-                editor.value = localStorage.getItem('raw_share_backup');
-                handleInput();
-            }
-            
-            // รอดีเลย์เล็กน้อยแล้วเช็คสถานะการต่อ Firebase
-            setTimeout(() => {
-                if (window.isFirebaseActive) {
-                    const badge = document.getElementById('cloud-badge');
-                    badge.innerHTML = '<i class="fa-solid fa-cloud text-emerald-400 mr-1"></i> Cloud Active';
-                    badge.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium";
+            <!-- Real-time Translation Panel -->
+            <div class="bg-gradient-to-b from-indigo-950/30 to-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between h-[250px] relative">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div>
+                    <span class="text-xs font-bold text-indigo-400 tracking-wider uppercase">คำแปลภาษามือปัจจุบัน (Real-time)</span>
                     
-                    const saveBtn = document.getElementById('cloud-save-btn');
-                    saveBtn.className = "w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer";
-                    saveBtn.disabled = false;
+                    <div class="mt-4 flex flex-col items-center justify-center py-4">
+                        <!-- Detected Sign text size -->
+                        <h2 id="current-gesture" class="text-5xl font-extrabold text-white tracking-tight text-center min-h-[60px] flex items-center justify-center">
+                            ---
+                        </h2>
+                        <!-- Translation text confidence -->
+                        <div id="gesture-sub" class="mt-2 text-xs text-slate-400 text-center">
+                            ทำท่าทางค้างไว้เพื่อให้ระบบวิเคราะห์
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-800/80 pt-3 flex justify-between items-center">
+                    <button id="btn-text-to-speech" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl text-xs text-slate-300 transition duration-150">
+                        <i class="fa-solid fa-volume-high text-indigo-400"></i>
+                        <span>ออกเสียงคำแปลปัจจุบัน</span>
+                    </button>
+                    <span class="text-[10px] text-slate-500 font-mono">ON-DEVICE INF</span>
+                </div>
+            </div>
+
+            <!-- Supported Gestures Cheat Sheet -->
+            <div class="bg-slate-900/40 border border-slate-800 rounded-3xl p-5 shadow-xl flex-grow flex flex-col overflow-hidden h-[300px]">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center">
+                    <i class="fa-solid fa-book-open text-indigo-400 mr-2"></i>
+                    พจนานุกรมท่าทางที่ระบบรองรับ (Dictionary)
+                </h3>
+
+                <!-- Gesture Cards Container -->
+                <div class="grid grid-cols-2 gap-2 overflow-y-auto pr-1 custom-scrollbar flex-grow">
                     
-                    const notice = document.getElementById('firebase-notice');
-                    if (notice) notice.style.display = 'none';
-                }
-            }, 1500);
-        };
+                    <!-- Gesture Card 1 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">รักคุณ (I Love You)</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อย (พับนิ้วกลางและนาง)</p>
+                    </div>
 
-        // ลบข้อความที่กรอกไว้
-        function clearEditor() {
-            if (editor.value.trim() !== '') {
-                editor.value = '';
-                handleInput();
-                localStorage.removeItem('raw_share_backup');
-                showToast("ล้างหน้าจอและข้อมูลแคชแล้ว");
+                    <!-- Gesture Card 2 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">ตกลง (OK)</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">ทำมือเป็นวงกลม ด้วยนิ้วโป้งและชี้ นิ้วที่เหลือเหยียดตรง</p>
+                    </div>
+
+                    <!-- Gesture Card 3 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">ยอดเยี่ยม (Good)</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วโป้งขึ้นนิ้วเดียว นิ้วอื่นกำไว้ (กด Like)</p>
+                    </div>
+
+                    <!-- Gesture Card 4 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">สู้ๆ (Victory)</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">ชูนิ้วชี้และนิ้วกลางเป็นรูปตัว V (ชูสองนิ้ว)</p>
+                    </div>
+
+                    <!-- Gesture Card 5 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">ห้าม / หยุด (Stop)</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">แบมือทั้ง 5 นิ้วตั้งตรงหันไปทางด้านหน้า</p>
+                    </div>
+
+                    <!-- Gesture Card 6 -->
+                    <div class="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sm text-indigo-300">สวัสดี / ทักทาย</span>
+                            <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded-full">พร้อม</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">แบมือแนวตั้งพร้อมสั่นมือเบาๆ ไปข้างๆ</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center">
+        <p class="text-[11px] text-slate-600">
+            ระบบทำงานบน Client-side อย่างปลอดภัย ไม่เก็บข้อมูลและรูปภาพใบหน้าของคุณขึ้นระบบคลาวด์
+        </p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script type="module">
+        import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm/index_bundle.js";
+
+        let handLandmarker = undefined;
+        let runningMode = "VIDEO";
+        let webcamRunning = false;
+        let lastVideoTime = -1;
+        let results = undefined;
+        let fps = 0;
+        let lastFrameTime = performance.now();
+
+        const video = document.getElementById("webcam");
+        const canvasElement = document.getElementById("output-canvas");
+        const canvasCtx = canvasElement.getContext("2d");
+        
+        const loaderTitle = document.getElementById("loader-title");
+        const loaderDesc = document.getElementById("loader-desc");
+        const loadingOverlay = document.getElementById("loading-overlay");
+        const aiStatus = document.getElementById("ai-status");
+        
+        const currentGesture = document.getElementById("current-gesture");
+        const gestureSub = document.getElementById("gesture-sub");
+        const detectedHandsCount = document.getElementById("detected-hands-count");
+        const detectPulse = document.getElementById("detect-pulse");
+        const fpsCounter = document.getElementById("fps-counter");
+        const btnTextToSpeech = document.getElementById("btn-text-to-speech");
+
+        btnTextToSpeech.addEventListener("click", () => {
+            const txt = currentGesture.textContent;
+            if (txt && txt !== "---" && txt !== "กำลังวิเคราะห์...") {
+                speakText(txt);
             }
-        }
+        });
 
-        // เช็คว่าลิงก์ที่เข้ามีข้อมูลแชร์แบบ Raw หรือไม่
-        async function checkUrlMode() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const rawParam = urlParams.get('raw'); // มีการเรียกใช้งานแบบ Raw ทันทีหรือไม่
-            const dataBase64 = urlParams.get('data'); // ข้อมูลแบบ Base64
-            const docId = urlParams.get('id'); // ดึงจากฐานข้อมูล Firestore
-
-            // ตรวจสอบความถูกต้องว่าต้องแสดงโหมดใด
-            if (rawParam === 'true' || rawParam === '') {
-                // โหมดแสดงข้อความดิบล้วน (Raw Viewer)
-                let textToShow = "";
-
-                if (dataBase64) {
-                    // ถอดรหัสข้อความจาก Base64
-                    try {
-                        textToShow = decodeURIComponent(atob(dataBase64));
-                        renderRawView(textToShow);
-                    } catch (e) {
-                        renderRawView("Error: ไม่สามารถถอดรหัสข้อมูล Base64 ได้ หรือข้อมูลไม่ถูกต้อง");
-                    }
-                } else if (docId) {
-                    // ดึงข้อมูลผ่านคลาวด์
-                    renderRawView("กำลังดึงข้อมูลดิบจากคลาวด์...");
-                    try {
-                        const db = window.db;
-                        if (db) {
-                            // ดึงตามกฎโครงสร้างของ Firestore (RULE 1): /artifacts/{appId}/public/data/{collectionName}
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', docId);
-                            const docSnap = await getDoc(docRef);
-                            
-                            if (docSnap.exists()) {
-                                textToShow = docSnap.data().content;
-                                renderRawView(textToShow);
-                            } else {
-                                renderRawView("Error: ไม่พบข้อมูลที่ต้องการในฐานข้อมูล");
-                            }
-                        } else {
-                            renderRawView("Error: ไม่ได้เปิดการใช้งานฐานข้อมูล Cloud Storage");
-                        }
-                    } catch (e) {
-                        renderRawView("Error: การดึงข้อมูลผิดพลาด -> " + e.message);
-                    }
-                }
-            } else if (dataBase64 || docId) {
-                // หากลิงก์มีข้อมูลแต่เปิดโหมดปกติ (ไม่ใช่ raw) โหลดเข้ามาโชว์ในกล่อง Editor
-                let textToLoad = "";
-                
-                if (dataBase64) {
-                    try {
-                        textToLoad = decodeURIComponent(atob(dataBase64));
-                        editor.value = textToLoad;
-                        handleInput();
-                    } catch (e) {
-                        showToast("ไม่สามารถประมวลลิงก์แชร์ได้");
-                    }
-                } else if (docId) {
-                    showToast("กำลังดึงข้อความจาก Cloud...");
-                    try {
-                        const db = window.db;
-                        if (db) {
-                            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', docId);
-                            const docSnap = await getDoc(docRef);
-                            if (docSnap.exists()) {
-                                editor.value = docSnap.data().content;
-                                handleInput();
-                                showToast("ดึงข้อความเสร็จสิ้น!");
-                            }
-                        }
-                    } catch (e) {
-                        showToast("ดึงข้อความล้มเหลว");
-                    }
-                }
-            }
-        }
-
-        // จัดแสดงผลหน้าตาแบบ Raw ดิบๆ 100% (ไม่มีตกแต่งใดๆ จากระบบนอกจาก Plain-text)
-        function renderRawView(text) {
-            // ซ่อน Editor UI
-            document.getElementById('editor-view').style.display = 'none';
-            document.getElementById('share-modal').style.display = 'none';
-            
-            // แสดงหน้าจอ Raw
-            const rawView = document.getElementById('raw-view');
-            const rawContent = document.getElementById('raw-content');
-            
-            rawView.classList.remove('hidden');
-            document.body.className = "raw-layout"; // เปลี่ยนคลาส Layout หลักเป็นขาวดำ
-            
-            // แทนค่าแบบปลอดภัย ป้องกันการโดน XSS หากมีแท็ก HTML
-            rawContent.textContent = text;
-        }
-
-        // แปลงข้อความเป็นรูปแบบ Base64 และสร้างลิงก์
-        function generateUrlLink() {
-            const text = editor.value;
-            if (!text.trim()) {
-                showToast("⚠️ กรุณาพิมพ์ข้อความก่อนสร้างลิงก์");
-                return;
-            }
-
+        // ฟังก์ชันเริ่มทำงานเมื่อโหลดไฟล์
+        async function runDemo() {
             try {
-                // เข้ารหัส Unicode (รวมถึงภาษาไทย) เป็น Base64
-                const base64Data = btoa(encodeURIComponent(text));
-                const baseUrl = window.location.origin + window.location.pathname;
+                loaderTitle.textContent = "กำลังเชื่อมโยงโมเดลคณิตศาสตร์...";
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.8/wasm"
+                );
                 
-                // ลิงก์ที่ 1: สั่งเป็นหน้า Raw ทันทีเมื่อเข้าลิงก์
-                const rawLink = `${baseUrl}?raw=true&data=${base64Data}`;
-                // ลิงก์ที่ 2: ลิงก์กลับมาดูผ่านหน้า UI Editor ที่แก้ไขต่อได้
-                const normalLink = `${baseUrl}?data=${base64Data}`;
-
-                showShareModal(rawLink, normalLink);
-            } catch (e) {
-                showToast("เกิดข้อผิดพลาดในการเข้ารหัสข้อมูล");
-            }
-        }
-
-        // บันทึกลง Firestore (สำหรับผู้ใช้ที่เซ็ตอัพ Firestore เพิ่มเติมภายหลัง)
-        async function saveToCloud() {
-            const text = editor.value;
-            if (!text.trim()) {
-                showToast("⚠️ กรุณาพิมพ์ข้อความก่อนจัดเก็บ");
-                return;
-            }
-
-            const db = window.db;
-            if (!db) {
-                showToast("ระบบคลาวด์ไม่พร้อมใช้งาน");
-                return;
-            }
-
-            try {
-                showToast("กำลังประมวลผลข้อมูล...");
-                
-                // สุ่ม ID ความยาว 8 ตัวอักษร
-                const randomId = Math.random().toString(36).substring(2, 10);
-                
-                // ใช้โครงสร้าง Path ตามกฎ (RULE 1) เสมอ
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pastes', randomId);
-                
-                await setDoc(docRef, {
-                    content: text,
-                    createdAt: new Date().toISOString()
+                loaderTitle.textContent = "กำลังโหลดระบบ AI เข้าหน่วยความจำ...";
+                handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+                        delegate: "GPU"
+                    },
+                    runningMode: runningMode,
+                    numHands: 2
                 });
-
-                const baseUrl = window.location.origin + window.location.pathname;
-                const rawLink = `${baseUrl}?raw=true&id=${randomId}`;
-                const normalLink = `${baseUrl}?id=${randomId}`;
-
-                showShareModal(rawLink, normalLink);
-            } catch (error) {
-                console.error("Cloud Save Error:", error);
-                showToast("บันทึกลงคลาวด์ผิดพลาด: " + error.message);
-            }
-        }
-
-        // แสดง Modal รวมผลลิงก์ทั้งหมด
-        function showShareModal(rawUrl, normalUrl) {
-            document.getElementById('raw-link-input').value = rawUrl;
-            document.getElementById('normal-link-input').value = normalUrl;
-            
-            const modal = document.getElementById('share-modal');
-            modal.classList.remove('hidden');
-        }
-
-        // ปิด Modal
-        function closeModal() {
-            document.getElementById('share-modal').classList.add('hidden');
-        }
-
-        // ใช้คำสั่ง Copy ของเบราว์เซอร์
-        function copyToClipboard(inputId) {
-            const copyText = document.getElementById(inputId);
-            copyText.select();
-            copyText.setSelectionRange(0, 99999); // สำหรับมือถือ
-            
-            // ใช้คำสั่งดั้งเดิมที่เสถียรที่สุดใน iframe ของ Canvas และ Netlify
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    showToast("📋 คัดลอกลิงก์สำเร็จแล้ว!");
-                } else {
-                    showToast("ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาก๊อปปี้ด้วยตนเอง");
-                }
+                
+                aiStatus.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                aiStatus.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full"></span> โมเดลโหลดเสร็จสมบูรณ์`;
+                
+                // ขั้นต่อไปคือการเปิดใช้กล้อง
+                startCamera();
             } catch (err) {
-                showToast("เกิดข้อผิดพลาดในการคัดลอก");
+                console.error(err);
+                loaderTitle.textContent = "เกิดข้อผิดพลาดในการรันระบบ";
+                loaderDesc.textContent = "เบราว์เซอร์ของคุณอาจไม่รองรับ WebGL หรือ WebAssembly ที่ AI ใช้รันโมเดล";
             }
         }
 
-        // ระบบแจ้งเตือนไมโคร (Toast Notification)
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            
-            toastMsg.innerText = message;
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            toast.classList.add('opacity-100');
-            
-            setTimeout(() => {
-                toast.classList.remove('opacity-100');
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
+        // ขอสิทธิ์และเปิดใช้กล้องเว็บแคม
+        async function startCamera() {
+            loaderTitle.textContent = "กำลังเปิดใช้งานเว็บแคม...";
+            try {
+                const constraints = {
+                    video: {
+                        width: 1280,
+                        height: 720,
+                        facingMode: "user"
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.addEventListener("loadeddata", predictWebcam);
+            } catch (err) {
+                console.error("Camera access blocked: ", err);
+                loaderTitle.textContent = "เข้าถึงกล้องถ่ายภาพไม่ได้";
+                loaderDesc.textContent = "กรุณาอนุญาตการเข้าถึงกล้องและรีเฟรชหน้านี้เพื่อสแกนด้วยกล้องของคุณ";
+            }
         }
+
+        // ตรวจสอบพิกัดของมือในวีดีโอแบบ Realtime
+        async function predictWebcam() {
+            // ปิดหน้าโหลดดิ้งเมื่อกล้องเริ่มสตรีมและประมวลผลพร้อม
+            if (video.videoWidth > 0) {
+                loadingOverlay.classList.add("hidden");
+                video.classList.remove("hidden");
+            }
+
+            // ตั้งค่า canvas ให้มีขนาดเท่ากับวีดีโอที่ส่งมาจริง
+            canvasElement.width = video.videoWidth;
+            canvasElement.height = video.videoHeight;
+
+            let startTimeMs = performance.now();
+            if (lastVideoTime !== video.currentTime) {
+                lastVideoTime = video.currentTime;
+                results = handLandmarker.detectForVideo(video, startTimeMs);
+            }
+
+            // คำนวณค่า FPS ปัจจุบัน
+            const now = performance.now();
+            fps = Math.round(1000 / (now - lastFrameTime));
+            lastFrameTime = now;
+            fpsCounter.textContent = `FPS: ${fps}`;
+
+            // เคลียร์ Canvas เพื่อวาดพิกัดโครงสร้างมือใหม่
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            if (results && results.landmarks) {
+                // อัปเดตบอกว่าเจอจำนวนมือกี่ข้าง
+                const handCount = results.landmarks.length;
+                if (handCount > 0) {
+                    detectedHandsCount.textContent = `ตรวจพบมือทั้งหมด ${handCount} ข้าง`;
+                    detectPulse.className = "inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping";
+                    
+                    // แปลท่าทางของมือข้างแรก
+                    const wordParsed = analyzeGestures(results.landmarks[0]);
+                    currentGesture.textContent = wordParsed.word;
+                    gestureSub.textContent = wordParsed.desc;
+                } else {
+                    detectedHandsCount.textContent = "ตรวจไม่พบมือในขณะนี้";
+                    detectPulse.className = "inline-block w-2 h-2 rounded-full bg-slate-500";
+                    currentGesture.textContent = "---";
+                    gestureSub.textContent = "กรุณายกมือเข้าสู่กรอบกล้อง";
+                }
+
+                // วาดเส้นลายโครงข้อต่อกระดูกบนจอภาพ
+                for (const landmarks of results.landmarks) {
+                    drawConnectors(landmarks);
+                    drawLandmarks(landmarks);
+                }
+            }
+
+            // เรียกทำงานซ้ำในเฟรมถัดไปโดยเร็วที่สุด
+            window.requestAnimationFrame(predictWebcam);
+        }
+
+        // ฟังก์ชันวาดเส้นเชื่อมระหว่างจุดประมวลผลข้อต่อ (Connectors)
+        function drawConnectors(landmarks) {
+            // กำหนดโครงข้อต่อนิ้วมือที่เชื่อมโยงกัน (MediaPipe Hand Connections)
+            const connections = [
+                [0, 1], [1, 2], [2, 3], [3, 4], // นิ้วโป้ง
+                [0, 5], [5, 6], [6, 7], [7, 8], // นิ้วชี้
+                [5, 9], [9, 10], [10, 11], [11, 12], // นิ้วกลาง
+                [9, 13], [13, 14], [14, 15], [15, 16], // นิ้วนาง
+                [13, 17], [17, 18], [18, 19], [19, 20], // นิ้วก้อย
+                [0, 17] // ฝ่ามือล่าง
+            ];
+
+            canvasCtx.strokeStyle = "#6366f1"; // สี Indigo
+            canvasCtx.lineWidth = 4;
+            canvasCtx.lineCap = "round";
+
+            for (const connection of connections) {
+                const firstPoint = landmarks[connection[0]];
+                const secondPoint = landmarks[connection[1]];
+
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(firstPoint.x * canvasElement.width, firstPoint.y * canvasElement.height);
+                canvasCtx.lineTo(secondPoint.x * canvasElement.width, secondPoint.y * canvasElement.height);
+                canvasCtx.stroke();
+            }
+        }
+
+        // ฟังก์ชันวาดวงกลมพิกัดตามข้อต่อนิ้ว (Landmarks)
+        function drawLandmarks(landmarks) {
+            for (const landmark of landmarks) {
+                canvasCtx.beginPath();
+                canvasCtx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 5, 0, 2 * Math.PI);
+                canvasCtx.fillStyle = "#22c55e"; // สี Emerald
+                canvasCtx.fill();
+                canvasCtx.lineWidth = 1.5;
+                canvasCtx.strokeStyle = "#ffffff";
+                canvasCtx.stroke();
+            }
+        }
+
+        // อัลกอริทึมวิเคราะห์ทิศทางความสูงและระยะห่างของข้อนิ้วเพื่อตัดสินใจแปลคำศัพท์
+        // อ้างอิงจุดพิกัดสำคัญ (0: ข้อมือ, 4: ปลายนิ้วโป้ง, 8: ปลายนิ้วชี้, 12: ปลายนิ้วกลาง, 16: ปลายนิ้วนาง, 20: ปลายนิ้วก้อย)
+        function analyzeGestures(landmarks) {
+            // ดึงค่าแกน Y ของปลายนิ้วกับข้อต่อนิ้วโคน (ค่าน้อยกว่าอยู่สูงกว่า)
+            const wrist = landmarks[0];
+            
+            const thumbTip = landmarks[4];
+            const thumbIp = landmarks[3]; // ข้อต่อกลางนิ้วโป้ง
+            
+            const indexTip = landmarks[8];
+            const indexPip = landmarks[6]; // โคนนิ้วชี้
+            
+            const middleTip = landmarks[12];
+            const middlePip = landmarks[10]; // โคนนิ้วกลาง
+            
+            const ringTip = landmarks[16];
+            const ringPip = landmarks[14]; // โคนนิ้วนาง
+            
+            const pinkyTip = landmarks[20];
+            const pinkyPip = landmarks[18]; // โคนนิ้วก้อย
+
+            // เช็คว่านิ้วแต่ละนิ้วชูเหยียดตรงขึ้นข้างบนหรือไม่ (ปลายนิ้วอยู่สูงกว่าโคนนิ้วพอสมควร)
+            const isIndexExtended = indexTip.y < indexPip.y;
+            const isMiddleExtended = middleTip.y < middlePip.y;
+            const isRingExtended = ringTip.y < ringPip.y;
+            const isPinkyExtended = pinkyTip.y < pinkyPip.y;
+
+            // คํานวณระยะห่างระหว่างจุด เช่น นิ้วโป้งกางออกด้านข้างหรือไม่
+            const isThumbExtended = Math.abs(thumbTip.x - indexPip.x) > 0.12;
+
+            // 1. ท่ารักเธอ (I Love You) : ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อย นิ้วอื่นพับลง
+            if (isThumbExtended && isIndexExtended && isPinkyExtended && !isMiddleExtended && !isRingExtended) {
+                return {
+                    word: "รักเธอ (I Love You)",
+                    desc: "ชูนิ้วโป้ง นิ้วชี้ และนิ้วก้อยพุ่งตรง ท่าทางบอกความรักสากล"
+                };
+            }
+
+            // 2. ท่า OK (ตกลง) : ชูนิ้วกลาง นิ้วนาง นิ้วก้อย นิ้วชี้กับนิ้วโป้งประกบกันเป็นวงกลม
+            const thumbToIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+            if (thumbToIndexDist < 0.05 && isMiddleExtended && isRingExtended && isPinkyExtended) {
+                return {
+                    word: "ตกลง (OK)",
+                    desc: "นิ้วโป้งแตะปลายนิ้วชี้เป็นวงกลม นิ้วอื่นๆ ทั้งสามเหยียดตรง"
+                };
+            }
+
+            // 3. ท่ายอดเยี่ยม / ดีมาก (Like) : ชูนิ้วโป้งขึ้นบน นิ้วที่เหลือทั้งสี่กำเก็บไว้
+            if (isThumbExtended && thumbTip.y < thumbIp.y && !isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+                return {
+                    word: "ยอดเยี่ยม (Good)",
+                    desc: "กำมือนิ้วสี่ข้อนิ้ว แล้วหงายยกปลายนิ้วโป้งขึ้นชี้ฟ้าเด่นชัด"
+                };
+            }
+
+            // 4. ท่าสู้ๆ / ชัยชนะ (Victory) : ชูสองนิ้วคือ นิ้วชี้และกลาง นิ้วที่เหลือกำพับหมด
+            if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended && !isThumbExtended) {
+                return {
+                    word: "สู้ๆ (Victory)",
+                    desc: "ชูนิ้วชี้และนิ้วกลางกางเป็นอักษร V สองนิ้วแห่งชัยชนะและการให้กำลังใจ"
+                };
+            }
+
+            // 5. ท่าห้าม / หยุด (Stop) : แบมือตั้งตรงทั้ง 5 นิ้ว (นิ้วทั้งหมดเหยียดขึ้นเหนือข้อมือเรียงกัน)
+            if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) {
+                // เช็คว่านิ้วเรียงใกล้เคียงกันแนวตั้ง ไม่ได้กางมือจนเกินระยะ
+                return {
+                    word: "ห้าม / หยุด (Stop)",
+                    desc: "แบแผ่หน้าฝ่ามือหันออกตรง สัญลักษณ์สั่งหยุดกระทำหรือการบอกปฏิเสธ"
+                };
+            }
+
+            // 6. ท่าทักทาย / สวัสดี : แบมือแต่ทิศทางนิ้วเอียงข้างเล็กน้อย (ขอบเขตนิ้วโป้งกาง)
+            if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended && isThumbExtended) {
+                return {
+                    word: "สวัสดี / ทักทาย",
+                    desc: "แบเหยียดนิ้วทุกข้อเตรียมพร้อมการโบกโบยทักทายเข้าหาผู้อื่น"
+                };
+            }
+
+            return {
+                word: "วิเคราะห์ท่าทาง...",
+                desc: "กำลังคำนวณทิศทางการพับงอนิ้วมือของคุณ"
+            };
+        }
+
+        // ระบบแปลเสียงออกลำโพง (Text to Speech)
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // เรียกทำงานตอนเริ่มเว็บ
+        runDemo();
     </script>
 </body>
 </html>
