@@ -1,558 +1,1290 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="h-full bg-slate-950 text-slate-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaper Match - สุ่มคุยกล้องสายดาร์กเรียลไทม์เสถียรภาพสูง</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- PeerJS Library - เสถียรและน้ำหนักเบาที่สุดสำหรับเว็บเบราว์เซอร์พรีวิว -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
-
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reaper Hwid  -  System</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#070a13',
+              900: '#0f1322',
+              800: '#1d2438',
+              700: '#2d3753',
+              600: '#47557a',
+              400: '#94a3b8',
+            },
+            primary: '#3b82f6',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+          }
         }
-        h1, h2, h3, button {
-            font-family: 'Kanit', sans-serif;
-        }
-        .video-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(13, 10, 18, 0.1) 0%, transparent 55%, transparent 75%, rgba(13, 10, 18, 0.8) 100%);
-            pointer-events: none;
-        }
-        .chat-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .chat-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .chat-scroll::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.3);
-            border-radius: 2px;
-        }
-        .reaper-pulse {
-            animation: reaper-radar 2s infinite linear;
-        }
-        @keyframes reaper-radar {
-            0% { transform: scale(1); opacity: 0.5; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-            50% { opacity: 0.2; }
-            100% { transform: scale(2.2); opacity: 0; box-shadow: 0 0 0 30px rgba(225, 29, 72, 0); }
-        }
-    </style>
+      }
+    }
+  </script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Sarabun', 'Chakra Petch', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f1322;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2d3753;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-[#09070f] text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-purple-500/30 selection:text-purple-200">
+<body class="h-full flex flex-col overflow-hidden custom-scrollbar bg-slate-950">
 
-    <!-- Header -->
-    <header class="border-b border-purple-950/40 bg-[#0d0a12]/90 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-gradient-to-tr from-purple-700 via-violet-800 to-rose-600 p-2.5 rounded-2xl shadow-lg shadow-purple-500/20">
-                    <i class="fa-solid fa-skull-crossbones text-lg text-white"></i>
-                </div>
+  <!-- ระบบแจ้งเตือนขนมปังปิ้ง (Toasts Alert) -->
+  <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- หน้าต่างกล่องโต้ตอบหลัก (Modal) -->
+  <div id="modal-container" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-45 hidden flex items-center justify-center p-4"></div>
+
+  <!-- ================= หน้าเข้าสู่ระบบ (LOGIN SCREEN) ================= -->
+  <div id="login-page" class="flex-1 flex items-center justify-center p-4 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/40 via-slate-950 to-slate-950">
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#1d243808_1px,transparent_1px),linear-gradient(to_bottom,#1d243808_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+    
+    <div class="relative w-full max-w-md bg-slate-900/90 border border-slate-800/80 p-8 rounded-2xl shadow-2xl backdrop-blur-lg">
+      
+      <!-- โลโก้ด้านบน -->
+      <div class="flex flex-col items-center mb-8">
+        <div class="w-16 h-16 bg-blue-600/10 border border-blue-500/30 rounded-2xl flex items-center justify-center text-blue-500 text-3xl mb-3 shadow-[0_0_25px_rgba(59,130,246,0.2)]">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-white">License Command</h1>
+        <p class="text-slate-400 text-xs mt-1.5 text-center">ระบบตรวจจับและอนุญาตสิทธิ์ฮาร์ดแวร์แบบเชื่อมต่อตรง</p>
+      </div>
+
+      <!-- สวิตช์ตั้งค่าคีย์ Firebase กรณีนำไปรันบนโฮสต์ส่วนตัว -->
+      <div class="mb-6 p-3 bg-slate-950/80 border border-slate-800/60 rounded-xl">
+        <button onclick="toggleFirebaseConfigPanel()" class="w-full flex justify-between items-center text-xs text-slate-400 hover:text-white transition-all font-medium">
+          <span><i class="fa-solid fa-sliders mr-1.5"></i>ตั้งค่า API Firebase ของคุณ (กำหนดเอง)</span>
+          <i id="config-caret" class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div id="firebase-config-panel" class="hidden mt-3 pt-3 border-t border-slate-800/40 space-y-2.5">
+          <p class="text-[10px] text-slate-500">หากไม่ได้ระบุ ระบบจะใช้ Firebase Demo Environment สำหรับสาธิตทำงาน</p>
+          <input type="text" id="fb-apiKey" placeholder="API Key" class="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs text-white">
+          <input type="text" id="fb-authDomain" placeholder="Auth Domain" class="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs text-white">
+          <input type="text" id="fb-projectId" placeholder="Project ID" class="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs text-white">
+          <button onclick="applyCustomFirebase()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 rounded-lg text-xs transition-all">เชื่อมต่อโปรเจกต์ใหม่</button>
+        </div>
+      </div>
+
+      <!-- ปลั๊กอินการยืนยันตัวตนจริงด้วยบัญชีโซเชียลต่าง ๆ -->
+      <div class="space-y-3">
+        <!-- ปุ่มล็อกอินผ่าน Google -->
+        <button onclick="loginWithSocial('google')" class="w-full bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-white py-3.5 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-3 active:scale-[0.99] shadow-lg">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5.04c1.62 0 3.08.56 4.22 1.65l3.15-3.15C17.45 1.68 14.93 1 12 1 7.35 1 3.39 3.68 1.49 7.62l3.78 2.93c.89-2.67 3.39-4.51 6.73-4.51z"/>
+            <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.28 1.48-1.12 2.74-2.38 3.58l3.7 2.87c2.16-1.99 3.41-4.93 3.41-8.6z"/>
+            <path fill="#FBBC05" d="M5.27 14.31c-.24-.72-.38-1.49-.38-2.31s.14-1.59.38-2.31L1.49 6.75C.54 8.33 0 10.1 0 12s.54 3.67 1.49 5.25l3.78-2.94z"/>
+            <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.34 0-5.84-1.84-6.73-4.51L1.49 16.75C3.39 20.32 7.35 23 12 23z"/>
+          </svg>
+          <span class="text-sm">เข้าใช้ผ่านบัญชี Google Sign-In</span>
+        </button>
+
+        <!-- ปุ่มล็อกอินผ่าน GitHub -->
+        <button onclick="loginWithSocial('github')" class="w-full bg-[#1e232b] hover:bg-[#2c323d] border border-slate-800 text-white py-3.5 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-3 active:scale-[0.99] shadow-lg">
+          <i class="fa-brands fa-github text-lg"></i>
+          <span class="text-sm">เข้าใช้ผ่านบัญชี GitHub Auth</span>
+        </button>
+
+        <!-- แถบคั่นสิทธิ์ผู้ใช้ -->
+        <div class="relative flex items-center py-2">
+          <div class="flex-grow border-t border-slate-800/80"></div>
+          <span class="flex-shrink mx-4 text-slate-500 text-[10px] uppercase font-bold tracking-wider">หรือใช้ผู้ใช้จำลองภายนอก</span>
+          <div class="flex-grow border-t border-slate-800/80"></div>
+        </div>
+
+        <!-- ปุ่มล็อกอินแบบไม่เผยชื่อ (Anonymously) สำหรับผู้ทดสอบ -->
+        <button onclick="loginAnonymously()" class="w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 hover:border-blue-500/30 text-blue-400 py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-circle-nodes"></i>
+          <span>เข้าชมระบบสาธิต (ไม่ระบุตัวตนแบบฉับพลัน)</span>
+        </button>
+      </div>
+
+      <div class="mt-8 text-center text-[10px] text-slate-500">
+        <p>ระบบความปลอดภัยมีมาตรการกรองสิทธิ์และจัดเก็บเซสชันผ่าน OAuth <br>โปรดเปิดใช้งานหน้าต่างป็อปอัปขณะดำเนินการล็อกอินเข้าสู่เบราว์เซอร์</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ระบบเว็บแผงบอร์ดการทำงานจริง (MAIN CONTROL WEB PANEL) ================= -->
+  <div id="main-panel" class="flex-1 flex overflow-hidden hidden">
+    <!-- แถบนำทางซ้าย (Sidebar Nav) -->
+    <aside id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800/80 flex flex-col transition-all duration-300 z-30">
+      
+      <!-- หัวส่วนควบคุมแอดมิน -->
+      <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 border border-blue-400/20 rounded-xl flex items-center justify-center text-white text-lg shadow-md shadow-blue-500/10">
+            <i class="fa-solid fa-server"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-white text-sm leading-tight">License System</h2>
+            <span class="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1 py-0.2 rounded font-bold uppercase tracking-wider">Cloud Connect</span>
+          </div>
+        </div>
+        <button onclick="toggleMobileSidebar()" class="text-slate-400 hover:text-white lg:hidden">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+
+      <!-- แถบรวมหน้าคีย์ย่อยสำหรับทำงาน -->
+      <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all text-xs font-medium">
+          <i class="fa-solid fa-square-poll-vertical w-5 text-center text-base"></i>
+          <span>ภาพรวมความจุหลัก</span>
+        </button>
+        <button onclick="switchTab('devices')" id="nav-devices" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all text-xs font-medium">
+          <i class="fa-solid fa-microchip w-5 text-center text-base"></i>
+          <span>สิทธิ์อุปกรณ์ในระบบ</span>
+        </button>
+        <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all text-xs font-medium">
+          <i class="fa-solid fa-user-shield w-5 text-center text-base"></i>
+          <span>รายชื่อผู้บริหารจัดการ</span>
+        </button>
+        <button onclick="switchTab('logs')" id="nav-logs" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all text-xs font-medium">
+          <i class="fa-solid fa-rectangle-list w-5 text-center text-base"></i>
+          <span>บันทึกความปลอดภัยหลัก</span>
+        </button>
+      </nav>
+
+      <!-- ส่วนประวัติโปรไฟล์ล่างสุด (User Info Panel) -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-950/40 flex flex-col gap-3">
+        <div class="flex items-center gap-3 overflow-hidden">
+          <div id="pfp-container" class="w-9 h-9 rounded-full bg-cover bg-center flex-shrink-0 flex items-center justify-center font-bold text-xs text-white border border-slate-800">
+            ?
+          </div>
+          <div class="overflow-hidden">
+            <h4 id="profile-display-name" class="font-semibold text-white truncate text-xs">กำลังโหลดสิทธิ์...</h4>
+            <p id="profile-email" class="text-[10px] text-slate-500 truncate mt-0.5">user@cloud.com</p>
+          </div>
+        </div>
+        <button onclick="handleSignOut()" class="w-full bg-slate-800/80 hover:bg-rose-950/20 hover:text-rose-400 border border-slate-700/60 hover:border-rose-900/30 text-slate-300 py-2 rounded-xl text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-power-off"></i>
+          <span>ออกจากเซสชันหลัก</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- พื้นที่แสดงคอนเทนต์ด้านขวา -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-slate-950">
+      
+      <!-- แถบด้านบนของเพจ (Navbar Header) -->
+      <header class="h-16 border-b border-slate-800/80 flex items-center justify-between px-6 bg-slate-900/30 backdrop-blur-md">
+        <div class="flex items-center gap-4">
+          <button onclick="toggleMobileSidebar()" class="text-slate-400 hover:text-white lg:hidden">
+            <i class="fa-solid fa-bars text-lg"></i>
+          </button>
+          <h2 id="page-title" class="text-base font-bold text-white tracking-wide">หน้าประเมินผลหลัก</h2>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- การซิงก์เรียลไทม์ผ่าน Firebase Cloud Connection -->
+          <div class="flex items-center gap-2 bg-emerald-500/5 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full text-[10px] font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Firebase Active</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- โซนการประมวลผลและการสลับแท็บเมนู -->
+      <div class="flex-1 overflow-y-auto p-6 custom-scrollbar" id="tab-container">
+        
+        <!-- ================= TAB: DASHBOARD ================= -->
+        <div id="tab-dashboard" class="space-y-6">
+          <!-- แผงข้อมูลภาพรวมเชิงสถิติ -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">อุปกรณ์ลงทะเบียนทั้งหมด</span>
+                <h3 class="text-2xl font-bold text-white mt-1" id="dash-total-devices">0</h3>
+                <p class="text-[10px] text-slate-500 mt-1">ฮาร์ดแวร์ในสัญญาสิทธิทั้งหมด</p>
+              </div>
+              <div class="w-11 h-11 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center text-lg shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                <i class="fa-solid fa-microchip"></i>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">สถานะอนุญาตใช้งาน (Active)</span>
+                <h3 class="text-2xl font-bold text-emerald-400 mt-1" id="dash-active-devices">0</h3>
+                <p class="text-[10px] text-emerald-500/80 mt-1">พร้อมรองรับเครื่องลูกข่ายยิงสิทธิ์</p>
+              </div>
+              <div class="w-11 h-11 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl flex items-center justify-center text-lg shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <i class="fa-solid fa-lock-open"></i>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">ถูกระงับ/หมดสัญญา (Blocked)</span>
+                <h3 class="text-2xl font-bold text-rose-400 mt-1" id="dash-blocked-devices">0</h3>
+                <p class="text-[10px] text-rose-500/80 mt-1">ปิดรับการส่งข้อมูลเพื่อยิงลิขสิทธิ์</p>
+              </div>
+              <div class="w-11 h-11 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl flex items-center justify-center text-lg shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                <i class="fa-solid fa-ban"></i>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden group">
+              <div>
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">อัตราเฉลี่ยผู้ใช้ในระบบ</span>
+                <h3 class="text-2xl font-bold text-amber-400 mt-1" id="dash-active-ratio">100%</h3>
+                <p class="text-[10px] text-amber-500/80 mt-1">เสถียรภาพสิทธิ์ของเซิร์ฟเวอร์</p>
+              </div>
+              <div class="w-11 h-11 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl flex items-center justify-center text-lg shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- โซนกราฟและการเคลื่อนไหวแบบ Real-time -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col h-[380px]">
+              <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-purple-400 via-violet-300 to-rose-400 bg-clip-text text-transparent">
-                        Reaper Match
-                    </h1>
-                    <p class="text-[10px] text-slate-400">ระบบแชทกล้องเรียลไทม์ข้ามอุปกรณ์ผ่านจุดเชื่อมสัญญาณตรง (P2P)</p>
+                  <h3 class="text-sm font-bold text-white">ปริมาณกิจกรรมการยืนยันใบอนุญาต</h3>
+                  <p class="text-xs text-slate-400">ข้อมูลแสดงปริมาณกิจกรรมรายชั่วโมงที่เกิดขึ้นบน Firebase ในแผงควบคุม</p>
                 </div>
+              </div>
+              <div class="flex-1 min-h-0 relative">
+                <canvas id="activeActivityChart"></canvas>
+              </div>
             </div>
-            
-            <div class="flex items-center space-x-2">
-                <span id="connection-status" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-ping"></span>
-                    พร้อมระบุห้อง
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col h-[380px]">
+              <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 class="text-sm font-bold text-white">กิจกรรมด่วนย้อนหลัง</h3>
+                  <p class="text-xs text-slate-400">ประวัติความปลอดภัยและการจัดการระบบ</p>
+                </div>
+                <button onclick="switchTab('logs')" class="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1">
+                  <span>ดูบันทึก</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+              
+              <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 pr-1" id="dash-recent-activities">
+                <!-- ข้อมูลถูกโหลดขึ้นมาแบบ Dynamic จากฐานข้อมูลเรียลไทม์ -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- บอร์ดทดสอบการประเมินสิทธิ์ (Sandbox Endpoint Simulator) -->
+          <div class="bg-gradient-to-r from-blue-950/40 to-slate-900 border border-blue-900/30 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
+              <i class="fa-solid fa-terminal text-blue-400 text-xs"></i>
+              <span>เครื่องมือยิงตรวจจับและอนุญาตสิทธิ์ (Real API Endpoint Playbox)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">
+              ทดสอบเสมือนโปรแกรมของคุณยิงเพื่อตรวจสอบความถูกต้องของสิทธิ์โดยตรงกับดาต้าเบส Firebase
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-2 space-y-2">
+                <label class="block text-[10px] uppercase font-bold tracking-wider text-slate-400">ป้อน License Key เพื่อยิงประมวลผล</label>
+                <div class="flex gap-2">
+                  <input type="text" id="sandbox-license" class="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white text-xs font-mono" placeholder="เช่น LIC-XXXX-XXXX">
+                  <button onclick="performSandboxVerify()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 rounded-xl text-xs transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-play"></i>
+                    <span>ส่ง Request</span>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[10px] uppercase font-bold tracking-wider text-slate-400">JSON API Response</label>
+                <div id="sandbox-response" class="bg-slate-950 border border-slate-800 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-slate-500 overflow-hidden leading-normal">
+                  รอรับทราฟฟิกข้อมูลทดสอบ...
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= TAB: DEVICES ================= -->
+        <div id="tab-devices" class="space-y-6 hidden">
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- ตัวกรองการค้นหาอุปกรณ์ภายใน -->
+            <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <div class="relative min-w-[280px]">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                  <i class="fa-solid fa-magnifying-glass text-xs"></i>
                 </span>
+                <input type="text" id="search-device-input" onkeyup="renderDevicesTable()" class="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="ระบุ HWID, ชื่อเครื่อง, หรือ License Key...">
+              </div>
+              
+              <select id="filter-device-status" onchange="renderDevicesTable()" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none">
+                <option value="all">ตัวกรองทั้งหมด</option>
+                <option value="enabled">เปิดสิทธิ์แล้ว (Enabled)</option>
+                <option value="disabled">ระงับสัญญาณ (Disabled)</option>
+              </select>
             </div>
+
+            <!-- เพิ่มใบลงทะเบียนเครื่องใหม่ -->
+            <button onclick="openDeviceConfigModal('add')" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-lg shadow-blue-500/10">
+              <i class="fa-solid fa-plus"></i>
+              <span>ลงทะเบียนเครื่องใหม่</span>
+            </button>
+          </div>
+
+          <!-- ตารางอุปกรณ์แบบเรียลไทม์ -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
+                    <th class="p-4">ข้อมูลและรายละเอียดอุปกรณ์</th>
+                    <th class="p-4">ฮาร์ดแวร์ HWID</th>
+                    <th class="p-4">License Key</th>
+                    <th class="p-4">วันสิ้นสุดสัญญา</th>
+                    <th class="p-4">สถานะส่งงาน</th>
+                    <th class="p-4 text-right">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="devices-table-body" class="divide-y divide-slate-800/40 text-xs">
+                  <!-- ซิงก์แสดงผลแบบเรียลไทม์ผ่าน Firebase Cloud Connection -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-    </header>
 
-    <!-- Notification Toast Area -->
-    <div id="toast-area" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4 pointer-events-none transition-all duration-300"></div>
+        <!-- ================= TAB: USERS ================= -->
+        <div id="tab-users" class="space-y-6 hidden">
+          <div class="flex justify-between items-center">
+            <p class="text-xs text-slate-400">รายชื่อบัญชีนักพัฒนาและพนักงานที่ดำเนินการผ่าน Firebase Auth ณ ปัจจุบัน</p>
+          </div>
 
-    <!-- Main Workspace -->
-    <main class="max-w-6xl mx-auto px-4 py-4 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-4">
-        
-        <!-- Left Section: Video Streams & Diagnostics (8 Cols) -->
-        <div class="lg:col-span-8 flex flex-col space-y-4 h-full">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="users-grid-container">
+            <!-- ผู้ใช้จำลองหรือผู้ใช้จริงที่เข้าผ่าน Google/GitHub -->
+          </div>
+        </div>
+
+        <!-- ================= TAB: LOGS ================= -->
+        <div id="tab-logs" class="space-y-6 hidden">
+          <div class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-slate-400">ตัวกรองพฤติกรรมระบบ:</span>
+              <select id="log-type-filter" onchange="renderLogsTable()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none">
+                <option value="all">ประวัติทั้งหมด</option>
+                <option value="info">ทั่วไป (INFO)</option>
+                <option value="security">สิทธิ์ใบอนุญาต (SECURITY)</option>
+                <option value="action">พฤติกรรมแอดมิน (ACTION)</option>
+                <option value="error">ขัดข้อง (ERROR)</option>
+              </select>
+            </div>
             
-            <!-- Room Code Entry & Random Generator for REAL Connection -->
-            <div class="bg-[#0f0c18]/90 border border-purple-950/40 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-                <div class="flex items-center space-x-3 w-full md:w-auto">
-                    <div class="p-2.5 bg-purple-950/40 rounded-xl text-purple-400 border border-purple-900/30">
-                        <i class="fa-solid fa-door-open text-base"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">รหัสเข้าห้องเพื่อจับคู่</h3>
-                        <p class="text-[11px] text-slate-500">ใส่รหัสเดียวกันบนสองเครื่องเพื่อเชื่อมต่อสายกล้องและไมค์ทันที</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
-                    <input type="text" id="room-code-input" placeholder="พิมพ์ชื่อหรือรหัสห้อง..." class="w-full md:w-48 bg-[#050308] border border-purple-950/40 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors">
-                    <button id="btn-generate-code" class="p-2.5 bg-[#140e24] hover:bg-[#1a1230] text-purple-400 rounded-xl border border-purple-950/30 transition duration-150" title="สุ่มรหัสห้องใหม่">
-                        <i class="fa-solid fa-dice text-xs"></i>
-                    </button>
-                    <button id="btn-join-room" class="px-6 py-2.5 bg-gradient-to-r from-purple-600 via-violet-700 to-rose-600 hover:opacity-95 text-white text-xs font-bold rounded-xl transition duration-150 shadow-md flex items-center space-x-1.5">
-                        <i class="fa-solid fa-link"></i>
-                        <span>เชื่อมต่อคุยสด</span>
-                    </button>
-                </div>
+            <button onclick="clearAllLogsFirebase()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5">
+              <i class="fa-regular fa-trash-can"></i>
+              <span>ล้างบันทึกดาต้าเบสทั้งหมด</span>
+            </button>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-[10px] uppercase tracking-wider font-semibold">
+                    <th class="p-4 w-44">วัน-เวลาบันทึก</th>
+                    <th class="p-4 w-32">ประเภท</th>
+                    <th class="p-4 w-40">ผู้รับผิดชอบ</th>
+                    <th class="p-4">เหตุการณ์และข้อความของทราฟฟิก</th>
+                    <th class="p-4 w-32 text-right">ที่อยู่ไอพี (IP)</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-table-body" class="divide-y divide-slate-800/40 text-[11px] font-mono text-slate-300">
+                  <!-- ดาต้าเบสโหลดเรียลไทม์ -->
+                </tbody>
+              </table>
             </div>
-
-            <!-- Video Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 min-h-[300px]">
-                
-                <!-- Remote Video (The Prey/Partner) -->
-                <div class="video-container relative aspect-video bg-[#0c0a13] rounded-2xl overflow-hidden border border-purple-950/30 flex items-center justify-center">
-                    <video id="remote-video" class="w-full h-full object-cover transform rounded-2xl" autoplay playsinline></video>
-                    
-                    <!-- Remote Placeholder -->
-                    <div id="remote-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0d0a12]/95 transition-all duration-300">
-                        <div class="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-3 border border-purple-500/20">
-                            <i class="fa-solid fa-ghost text-2xl text-purple-400 animate-bounce"></i>
-                        </div>
-                        <h3 class="text-slate-200 font-bold text-sm mb-1">หน้าจอคู่สนทนาของคุณ</h3>
-                        <p class="text-[11px] text-slate-400 max-w-xs">พิมพ์รหัสห้องเดียวกันกับเพื่อน แล้วกดเชื่อมต่อเพื่อเริ่มรับสายกล้องสด</p>
-                    </div>
-
-                    <!-- Partner Label -->
-                    <div class="absolute bottom-3 left-3 z-20 flex items-center space-x-2 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-full border border-purple-900/40">
-                        <i class="fa-solid fa-skull text-rose-500 text-xs animate-pulse"></i>
-                        <span id="remote-label" class="text-[11px] font-semibold text-slate-200">คู่สนทนาข้ามอุปกรณ์</span>
-                    </div>
-
-                    <!-- Match Overlay Loading (Radar Animation) -->
-                    <div id="matching-overlay" class="absolute inset-0 bg-[#07050a] flex flex-col items-center justify-center hidden z-30">
-                        <div class="relative w-24 h-24 mb-6 flex items-center justify-center">
-                            <div class="absolute w-24 h-24 rounded-full bg-purple-500/20 reaper-pulse"></div>
-                            <div class="absolute w-16 h-16 rounded-full bg-rose-500/30 reaper-pulse" style="animation-delay: 0.7s"></div>
-                            <div class="relative w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center border border-purple-400 shadow-lg shadow-purple-500/30">
-                                <i class="fa-solid fa-hourglass-half text-lg text-white animate-spin"></i>
-                            </div>
-                        </div>
-                        <h4 class="text-sm font-bold text-slate-200" id="matching-status-text">ยมทูตกำลังเชื่อมโยงช่องทางด่วน...</h4>
-                        <p class="text-[10px] text-purple-400/80 mt-1">กำลังแลกเปลี่ยนสัญญาณกับเครื่องปลายทาง</p>
-                    </div>
-                </div>
-
-                <!-- Local Video -->
-                <div class="video-container relative aspect-video bg-[#0c0a13] rounded-2xl overflow-hidden border border-purple-950/30 flex items-center justify-center">
-                    <video id="local-video" class="w-full h-full object-cover transform -scale-x-100 rounded-2xl" autoplay playsinline muted></video>
-                    
-                    <!-- Local Placeholder -->
-                    <div id="local-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-slate-950">
-                        <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-2">
-                            <i class="fa-solid fa-video-slash text-base text-slate-400"></i>
-                        </div>
-                        <h3 class="text-xs font-semibold text-slate-300">กรุณาอนุญาตกล้องและไมค์</h3>
-                    </div>
-
-                    <div class="absolute bottom-3 left-3 z-20 flex items-center space-x-2 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-full border border-purple-900/40">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span class="text-[11px] font-semibold text-slate-200">กล้องสดของคุณ</span>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Controls Panel -->
-            <div class="bg-[#0f0c18]/60 border border-purple-950/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-center sm:text-left">
-                    <h3 class="text-xs font-semibold text-slate-200">แผงควบคุมหลัก</h3>
-                    <p class="text-[11px] text-slate-400">ระบบแชร์สตรีมสัญญาณภาพผ่านเครือข่าย WebRTC Direct</p>
-                </div>
-                
-                <div class="flex items-center space-x-2 w-full sm:w-auto justify-center">
-                    <button id="btn-toggle-mic" class="p-3 bg-purple-950/40 hover:bg-purple-900/40 active:bg-purple-800 text-slate-300 rounded-xl transition duration-150 border border-purple-850/40">
-                        <i class="fa-solid fa-microphone text-sm" id="mic-icon"></i>
-                    </button>
-                    <button id="btn-toggle-cam" class="p-3 bg-purple-950/40 hover:bg-purple-900/40 active:bg-purple-800 text-slate-300 rounded-xl transition duration-150 border border-purple-850/40">
-                        <i class="fa-solid fa-video text-sm" id="cam-icon"></i>
-                    </button>
-                    <button id="btn-skip" class="px-6 py-3 bg-slate-900 hover:bg-rose-500/20 hover:text-rose-400 border border-purple-950/30 text-rose-400 text-xs font-semibold rounded-xl transition duration-150 flex items-center space-x-1.5">
-                        <i class="fa-solid fa-phone-slash"></i>
-                        <span>วางสายสนทนา</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Diagnostics Console -->
-            <div class="bg-[#050308] border border-purple-950/30 p-3 rounded-2xl">
-                <div class="flex items-center justify-between border-b border-purple-950/20 pb-2 mb-2">
-                    <div class="flex items-center space-x-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        <i class="fa-solid fa-terminal text-purple-400 animate-pulse"></i>
-                        <span>ประวัติระบบส่งข้อมูล Reaper WebRTC (Terminal)</span>
-                    </div>
-                </div>
-                <div id="debug-logs" class="h-16 overflow-y-auto text-[10px] font-mono text-purple-300 space-y-1 custom-scrollbar">
-                    <div>[ระบบ] สแตนด์บายความคุ้มครองกล้องสด...</div>
-                </div>
-            </div>
-
+          </div>
         </div>
 
-        <!-- Right Section: Chat Area -->
-        <div class="lg:col-span-4 flex flex-col bg-[#0f0c18]/30 border border-purple-950/30 rounded-2xl overflow-hidden shadow-xl min-h-[400px]">
-            <div class="p-3 bg-slate-950/50 border-b border-purple-950/20 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-comments text-purple-400"></i>
-                    <span class="text-xs font-bold">กล่องข้อความความลับ</span>
-                </div>
-                <span id="chat-mode" class="text-[9px] text-slate-500 font-mono">OFFLINE</span>
-            </div>
-
-            <!-- Messages Stream -->
-            <div id="chat-messages-container" class="flex-grow p-3 overflow-y-auto space-y-3 chat-scroll text-xs">
-                <div id="welcome-chat-text" class="text-center py-8 text-slate-600 flex flex-col items-center">
-                    <i class="fa-solid fa-comment-dots text-xl mb-2 text-purple-950"></i>
-                    <p class="text-[10px]">จับคู่คุยกล้องสำเร็จ แผงพิมพ์แชทจะปลดล็อกทันที</p>
-                </div>
-            </div>
-
-            <!-- Message Form -->
-            <form id="chat-form" class="p-2 bg-slate-950/60 border-t border-purple-950/20 flex items-center space-x-1.5">
-                <input type="text" id="chat-input" placeholder="กรุณาจับคู่เพื่อเริ่มพิมพ์แชท..." class="flex-grow bg-[#050308] text-xs border border-purple-950/20 rounded-lg px-3 py-2.5 focus:outline-none focus:border-purple-500 text-slate-100 placeholder-slate-700" disabled>
-                <button type="submit" id="btn-send" class="p-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-900 disabled:text-slate-600 text-white rounded-lg transition duration-150 flex items-center justify-center" disabled>
-                    <i class="fa-solid fa-paper-plane text-xs"></i>
-                </button>
-            </form>
-        </div>
-
+      </div>
     </main>
+  </div>
 
-    <!-- Footer -->
-    <footer class="border-t border-purple-950/20 bg-[#050308] py-3 text-center">
-        <p class="text-[9px] text-slate-600">
-            ระบบทำงานแบบไร้เซิร์ฟเวอร์คนกลาง ปลอดภัยข้ามอุปกรณ์ 100%
-        </p>
-    </footer>
+  <!-- ================= FIREBASE APPLICATION LOGIC ================= -->
+  <!-- นำเข้าไลบรารี SDK จาก CDN โดยตรง -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, signInAnonymously as fbSignInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <!-- WebRTC Connection Script (Using PeerJS Engine) -->
-    <script>
-        let localStream = null;
-        let peer = null;
-        let currentCall = null;
-        let currentConn = null;
-        let isMuted = false;
-        let isCamOff = false;
+    // กำหนดรายละเอียด API ในสภาพแวดล้อมจำลอง (Default Sandbox Environment)
+    // สำหรับการรันงานจริง โปรเจกต์จะนำตัวแปรโกลบอลขึ้นมาใช้อัตโนมัติเมื่อกำหนดค่า
+    const defaultFirebaseConfig = {
+      apiKey: "", // แผงจำลองพร้อมทำงานทันทีโดยไม่ต้องระบุคีย์ผ่านหน้าบ้าน
+      authDomain: "device-licensing-sandbox.firebaseapp.com",
+      projectId: "device-licensing-sandbox",
+      storageBucket: "device-licensing-sandbox.appspot.com",
+    };
 
-        // ดึงอิลิเมนต์จาก DOM
-        const localVideo = document.getElementById('local-video');
-        const remoteVideo = document.getElementById('remote-video');
-        const localPlaceholder = document.getElementById('local-placeholder');
-        const remotePlaceholder = document.getElementById('remote-placeholder');
-        const connectionStatus = document.getElementById('connection-status');
-        const debugConsole = document.getElementById('debug-logs');
-        const toastArea = document.getElementById('toast-area');
+    // ค้นหาคีย์จากตัวแปรโกลบอลระบบ หรือคีย์จำลอง
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'real-license-controller-app';
+    let firebaseConfig = defaultFirebaseConfig;
+
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+      try {
+        firebaseConfig = JSON.parse(__firebase_config);
+      } catch (e) {
+        console.warn("ไม่สามารถ parse ค่า __firebase_config ได้ กำลังสลับไปใช้ Mock config");
+      }
+    }
+
+    // กำหนดสถานะตัวแปรหลัก (Global Javascript State)
+    let app, auth, db;
+    let user = null;
+    let localDevices = [];
+    let localMembers = [];
+    let localLogs = [];
+    let activityChart = null;
+
+    // การเริ่มต้นระบบเชื่อมโยง Firebase และการรันพฤติกรรมเซสชัน
+    function bootstrapFirebase(config) {
+      try {
+        app = initializeApp(config);
+        auth = getAuth(app);
+        db = getFirestore(app);
         
-        const roomCodeInput = document.getElementById('room-code-input');
-        const btnGenerateCode = document.getElementById('btn-generate-code');
-        const btnJoinRoom = document.getElementById('btn-join-room');
-        const btnSkip = document.getElementById('btn-skip');
-        const matchingOverlay = document.getElementById('matching-overlay');
-        const matchingStatusText = document.getElementById('matching-status-text');
+        showToast("เชื่อมโยงโครงสร้างฐานข้อมูล Firebase เรียบร้อยแล้ว", "success");
+        listenToAuthChanges();
+      } catch (err) {
+        console.error("Firebase init crash: ", err);
+        showToast("การโหลด Firebase API ล้มเหลว โปรดตรวจสอบโครงสร้าง", "danger");
+      }
+    }
+
+    // ฟังก์ชันติดตามการเปลี่ยนแปลงเซสชันผู้ใช้ (Auth Listener)
+    function listenToAuthChanges() {
+      onAuthStateChanged(auth, async (activeUser) => {
+        if (activeUser) {
+          user = activeUser;
+          
+          // บันทึกโปรไฟล์สิทธิ์การเชื่อมต่อบนดาต้าเบสหลัก (Firestore)
+          await saveUserProfileToFirestore(user);
+
+          // ซ่อนหน้าล็อกอิน และแสดงคอนโซล
+          document.getElementById("login-page").classList.add("hidden");
+          document.getElementById("main-panel").classList.remove("hidden");
+
+          // ดึงสิทธิ์โปรไฟล์เพื่ออัปเดตหน้าบ้าน
+          updateUserProfileUI();
+
+          // เริ่มดึงข้อมูลเรียลไทม์จากระบบ Firestore
+          initializeRealtimeSubscriptions();
+          
+          switchTab("dashboard");
+          showToast(`เข้าใช้งานสำเร็จในระบบของ ${user.displayName || 'Guest User'}`, "success");
+          addLogEntryToFirebase("info", user.displayName || user.email || "Anonymous", "เชื่อมต่อเข้าแผงบอร์ดแอดมิน");
+        } else {
+          user = null;
+          document.getElementById("login-page").classList.remove("hidden");
+          document.getElementById("main-panel").classList.add("hidden");
+        }
+      });
+    }
+
+    // บันทึกประวัติโปรไฟล์ผู้ล็อกอินสากล
+    async function saveUserProfileToFirestore(currUser) {
+      if (!currUser) return;
+      const memberDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'members', currUser.uid);
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      const profileData = {
+        uid: currUser.uid,
+        displayName: currUser.displayName || "สมาชิกทั่วไป",
+        email: currUser.email || "anonymous@license.com",
+        photoURL: currUser.photoURL || "",
+        role: "Admin", // บัญชีแรกรันสิทธิ์ Admin ทันทีสำหรับควบคุมระบบ
+        lastActive: todayStr
+      };
+
+      try {
+        await setDoc(memberDocRef, profileData, { merge: true });
+      } catch (e) {
+        console.warn("ไม่สามารถบันทึกข้อมูลสิทธิ์ผู้ดูแลระบบลง Firestore ได้: ", e);
+      }
+    }
+
+    // ================= แหล่งรวมการซิงก์ฐานข้อมูลเรียลไทม์ (FIRESTORE REALTIME SYNC) =================
+    let unsubscribeDevices, unsubscribeLogs, unsubscribeMembers;
+
+    function initializeRealtimeSubscriptions() {
+      if (!user) return;
+
+      // 1. ซิงก์สิทธิ์ฮาร์ดแวร์อุปกรณ์ (Realtime Devices Sync)
+      const devicesRef = collection(db, 'artifacts', appId, 'public', 'data', 'devices');
+      unsubscribeDevices = onSnapshot(devicesRef, (snapshot) => {
+        const devices = [];
+        snapshot.forEach((doc) => {
+          devices.push({ id: doc.id, ...doc.data() });
+        });
+        localDevices = devices;
         
-        const btnToggleMic = document.getElementById('btn-toggle-mic');
-        const btnToggleCam = document.getElementById('btn-toggle-cam');
-        const chatForm = document.getElementById('chat-form');
-        const chatInput = document.getElementById('chat-input');
-        const chatContainer = document.getElementById('chat-messages-container');
-        const chatMode = document.getElementById('chat-mode');
-        const remoteLabel = document.getElementById('remote-label');
+        // อัปเดตตารางและแผงสถิติด้านบนของแดชบอร์ด
+        renderDevicesTable();
+        calculateDashboardMetrics();
+      }, (error) => {
+        showToast("การเชื่อมต่อดึงข้อมูลอุปกรณ์สะดุดล้มเหลว", "danger");
+      });
 
-        // บันทึก Log ลงหน้าจอ Terminal
-        function log(message, type = "info") {
-            const time = new Date().toLocaleTimeString('th-TH', { hour12: false });
-            const logDiv = document.createElement('div');
-            
-            if (type === "success") logDiv.className = "text-emerald-400 font-semibold";
-            else if (type === "error") logDiv.className = "text-rose-400 font-bold";
-            else if (type === "warn") logDiv.className = "text-amber-400";
-            else logDiv.className = "text-purple-300";
-
-            logDiv.textContent = `[${time}] ${message}`;
-            debugConsole.appendChild(logDiv);
-            debugConsole.scrollTop = debugConsole.scrollHeight;
-        }
-
-        // แจ้งเตือนข้อความ Custom Toast
-        function showToast(message, type = "info") {
-            const toast = document.createElement('div');
-            toast.className = `p-3.5 rounded-xl mb-2 text-xs font-semibold shadow-lg border text-white transition-all duration-300 transform translate-y-2 pointer-events-auto flex items-center justify-between ${
-                type === 'error' ? 'bg-rose-950/90 border-rose-800 shadow-rose-950/40' : 'bg-[#120b22]/90 border-purple-850 shadow-purple-950/40'
-            }`;
-            toast.innerHTML = `
-                <span>${message}</span>
-                <button class="ml-3 text-slate-400 hover:text-white" onclick="this.parentElement.remove()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            `;
-            toastArea.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2');
-            }, 10);
-            setTimeout(() => {
-                toast.remove();
-            }, 4000);
-        }
-
-        // โหลดกล้องตั้งแต่เริ่มเข้าหน้าระบบ
-        window.addEventListener('DOMContentLoaded', async () => {
-            await setupLocalCamera();
-            initPeer();
+      // 2. ซิงก์ประวัติการรับรอง (Realtime Logs Sync)
+      const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+      unsubscribeLogs = onSnapshot(logsRef, (snapshot) => {
+        const logs = [];
+        snapshot.forEach((doc) => {
+          logs.push({ id: doc.id, ...doc.data() });
         });
+        
+        // จัดเรียง Log ย้อนหลังจากไทม์แสตมป์ในหน่วยความจำ (หลีกเลี่ยงการใช้ Query OrderBy ซับซ้อนตาม Rule 2)
+        logs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+        
+        localLogs = logs;
+        renderLogsTable();
+        renderDashboardLogs();
+        renderActivityTrendChart();
+      }, (error) => {
+        showToast("ข้อขัดข้องการจัดเรียงกิจกรรมความปลอดภัย", "danger");
+      });
 
-        async function setupLocalCamera() {
-            try {
-                log("กำลังขออนุญาตเปิดใช้งานกล้องสดและไมโครโฟน...");
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480, facingMode: "user" },
-                    audio: true
-                });
-                localVideo.srcObject = localStream;
-                localPlaceholder.classList.add('hidden');
-                log("เปิดใช้งานกล้องสดสำเร็จและพร้อมส่งออก", "success");
-            } catch (err) {
-                log(`กล้องถูกปฏิเสธ: ${err.message}`, "error");
-                showToast("โปรดอนุญาตสิทธิ์กล้องในเบราว์เซอร์เพื่อเชื่อมต่อวิดีโอคอล", "error");
+      // 3. ซิงก์รายชื่อผู้ล็อกอินร่วม (Realtime Members Sync)
+      const membersRef = collection(db, 'artifacts', appId, 'public', 'data', 'members');
+      unsubscribeMembers = onSnapshot(membersRef, (snapshot) => {
+        const members = [];
+        snapshot.forEach((doc) => {
+          members.push({ id: doc.id, ...doc.data() });
+        });
+        localMembers = members;
+        renderMembersCards();
+      }, (error) => {
+        showToast("ไม่สามารถอัปเดตสมาชิกที่รันออนไลน์", "danger");
+      });
+    }
+
+    // ยกเลิกการติดตามสถานะเมื่อออกจากระบบสิทธิ์ความปลอดภัย
+    function clearSubscriptions() {
+      if (unsubscribeDevices) unsubscribeDevices();
+      if (unsubscribeLogs) unsubscribeLogs();
+      if (unsubscribeMembers) unsubscribeMembers();
+    }
+
+    // ================= ระบบบันทึก Log และคำนวณสถิติหลัก =================
+    async function addLogEntryToFirebase(category, actor, message) {
+      if (!user) return;
+      const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+      const now = new Date();
+      const formatTime = now.getFullYear() + "-" + 
+        String(now.getMonth() + 1).padStart(2, '0') + "-" + 
+        String(now.getDate()).padStart(2, '0') + " " + 
+        String(now.getHours()).padStart(2, '0') + ":" + 
+        String(now.getMinutes()).padStart(2, '0') + ":" + 
+        String(now.getSeconds()).padStart(2, '0');
+
+      const logData = {
+        timestamp: formatTime,
+        category: category,
+        actor: actor,
+        message: message,
+        ip: "101.51.109.112" // ไอพีสาธารณะเชื่อมตรงระบบ Cloud (Mock IP)
+      };
+
+      try {
+        await addDoc(logsRef, logData);
+      } catch (e) {
+        console.error("Error writing log to Firestore: ", e);
+      }
+    }
+
+    // ล้างประวัติการทำงานบน Firestore ทั่วทั้งระบบ
+    window.clearAllLogsFirebase = async function() {
+      if (localLogs.length === 0) {
+        showToast("ไม่มีชุดบันทึกข้อมูลที่จะทำความสะอาดในโปรเจกต์", "warning");
+        return;
+      }
+      
+      openConfirmDialog(
+        "ยืนยันต้องการลบ Log บนคลาวด์?",
+        "เหตุการณ์ประวัติจะสูญหายทันทีและไม่สามารถกู้คืนผ่านระบบ Cloud Backups ได้อีกต่อไป!",
+        async () => {
+          try {
+            // คัดลอกและนำไปลบล้าง
+            for (const log of localLogs) {
+              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'logs', log.id);
+              await deleteDoc(docRef);
             }
+            showToast("ล้างประวัติการทำงานเรียลไทม์เสร็จสมบูรณ์", "success");
+            addLogEntryToFirebase("action", user.displayName || "Admin", "สั่งเคลียร์ประวัติกิจกรรมความปลอดภัยทั้งหมด");
+          } catch (e) {
+            showToast("พบปัญหาความปลอดภัยระหว่างลบสิทธิ์ชุดข้อมูลประวัติ", "danger");
+          }
+        }
+      );
+    }
+
+    // ================= ย้ายระบบประมวลผลและการแสดงผล UI หน้าแดชบอร์ด =================
+    function calculateDashboardMetrics() {
+      const total = localDevices.length;
+      let active = 0;
+      let blocked = 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      localDevices.forEach(d => {
+        const isExpired = d.expire_date ? new Date(d.expire_date) < new Date(todayStr) : false;
+        if (isExpired || !d.is_enabled) {
+          blocked++;
+        } else {
+          active++;
+        }
+      });
+
+      document.getElementById("dash-total-devices").innerText = total;
+      document.getElementById("dash-active-devices").innerText = active;
+      document.getElementById("dash-blocked-devices").innerText = blocked;
+
+      const ratio = total > 0 ? Math.round((active / total) * 100) : 100;
+      document.getElementById("dash-active-ratio").innerText = ratio + "%";
+    }
+
+    function renderDashboardLogs() {
+      const container = document.getElementById("dash-recent-activities");
+      container.innerHTML = "";
+
+      // คัดกรอง Log สูงสุด 5 รายการล่าสุดในหน่วยความจำหน้าบ้าน
+      const subset = localLogs.slice(0, 5);
+
+      if (subset.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">ไม่มีกิจกรรมที่อัปเดตเรียลไทม์</p>`;
+        return;
+      }
+
+      subset.forEach(log => {
+        let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+        if (log.category === 'security') badgeColor = "bg-purple-500/10 text-purple-400 border-purple-500/20";
+        if (log.category === 'action') badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        if (log.category === 'error') badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+
+        const logDiv = document.createElement("div");
+        logDiv.className = "p-2.5 bg-slate-950/60 border border-slate-800/80 rounded-xl hover:border-slate-700 transition-all text-[11px] font-sans";
+        logDiv.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[9px] text-slate-500">${log.timestamp}</span>
+            <span class="text-[8px] px-1 py-0.2 rounded border uppercase font-bold ${badgeColor}">${log.category}</span>
+          </div>
+          <p class="text-slate-300"><strong class="text-slate-400 font-semibold">[${log.actor}]</strong> ${log.message}</p>
+        `;
+        container.appendChild(logDiv);
+      });
+    }
+
+    function renderActivityTrendChart() {
+      const ctx = document.getElementById('activeActivityChart').getContext('2d');
+      if (activityChart) {
+        activityChart.destroy();
+      }
+
+      // นับกิจกรรมทราฟฟิกแยกตามประเภทสำหรับวิเคราะห์บนแผนภูมิแท่งวงแหวนหรือภาพรวม
+      let infoCount = 0, securityCount = 0, actionCount = 0, errorCount = 0;
+      localLogs.forEach(l => {
+        if (l.category === 'info') infoCount++;
+        if (l.category === 'security') securityCount++;
+        if (l.category === 'action') actionCount++;
+        if (l.category === 'error') errorCount++;
+      });
+
+      activityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['ความปลอดภัย (Security)', 'เหตุการณ์ผู้ใช้ (Action)', 'ระบบทั่วไป (Info)', 'ข้อผิดพลาด (Error)'],
+          datasets: [{
+            label: 'ปริมาณกิจกรรมที่ลงทะเบียนบน Firebase (จำนวนครั้ง)',
+            data: [securityCount, actionCount, infoCount, errorCount],
+            backgroundColor: [
+              'rgba(168, 85, 247, 0.2)',  // Purple
+              'rgba(16, 185, 129, 0.2)',  // Emerald
+              'rgba(59, 130, 246, 0.2)',  // Blue
+              'rgba(239, 68, 68, 0.2)'    // Rose
+            ],
+            borderColor: [
+              '#a855f7',
+              '#10b981',
+              '#3b82f6',
+              '#ef4444'
+            ],
+            borderWidth: 1.5,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // ================= API SANDBOX GRAPHIC TEST =================
+    window.performSandboxVerify = async function() {
+      const licenseInput = document.getElementById("sandbox-license").value.trim();
+      const responseBox = document.getElementById("sandbox-response");
+
+      if (!licenseInput) {
+        showToast("กรุณาป้อนรหัสใบอนุญาตเพื่อจำลองการตรวจสอบสิทธิ์", "warning");
+        return;
+      }
+
+      responseBox.innerText = "กำลังยิง Query ไหลข้อมูลข้าม Cloud Database...";
+      responseBox.className = "bg-slate-950 border border-slate-800 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-yellow-500 animate-pulse";
+
+      setTimeout(() => {
+        // ค้นหาคีย์จากระบบฐานข้อมูลท้องถิ่นที่อัปเดตเรียลไทม์
+        const matched = localDevices.find(d => d.key === licenseInput || d.hwid === licenseInput);
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        if (matched) {
+          const isExpired = matched.expire_date ? new Date(matched.expire_date) < new Date(todayStr) : false;
+          
+          if (!matched.is_enabled) {
+            responseBox.innerHTML = `{"status":"blocked","message":"ฮาร์ดแวร์ถูกเพิกถอนสิทธิ์หลัก","hwid":"${matched.hwid}"}`;
+            responseBox.className = "bg-rose-950/20 border border-rose-500/30 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-rose-400";
+            addLogEntryToFirebase("security", "API PLAYGROUND", `ปฏิเสธเครื่องที่โดนบล็อก: ${matched.device_name}`);
+          } else if (isExpired) {
+            responseBox.innerHTML = `{"status":"expired","message":"สัญญาสิ้นสุดการให้บริการ","expire":"${matched.expire_date}"}`;
+            responseBox.className = "bg-amber-950/20 border border-amber-500/30 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-amber-400";
+            addLogEntryToFirebase("security", "API PLAYGROUND", `ปฏิเสธเครื่องที่หมดสัญญา: ${matched.device_name}`);
+          } else {
+            responseBox.innerHTML = `{"status":"verified","device":"${matched.device_name}","access":"granted"}`;
+            responseBox.className = "bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-emerald-400";
+            addLogEntryToFirebase("security", "API PLAYGROUND", `ยอมรับตรวจสอบความถูกต้องเครื่อง: ${matched.device_name}`);
+          }
+        } else {
+          responseBox.innerHTML = `{"status":"unauthorized","message":"ไม่พบคีย์ในสารบบความปลอดภัย"}`;
+          responseBox.className = "bg-rose-950/20 border border-rose-500/30 rounded-xl p-3 h-10 flex items-center text-[10px] font-mono text-rose-400";
+          addLogEntryToFirebase("security", "API PLAYGROUND", `พยายามใช้คีย์ทดสอบที่ไม่ตรงสารบบ: ${licenseInput}`);
+        }
+      }, 600);
+    }
+
+    // ================= การเรนเดอร์ตารางอุปกรณ์ (DEVICES TABLE RENDERING) =================
+    function renderDevicesTable() {
+      const tbody = document.getElementById("devices-table-body");
+      tbody.innerHTML = "";
+
+      const searchVal = document.getElementById("search-device-input").value.trim().toLowerCase();
+      const statusFilter = document.getElementById("filter-device-status").value;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const filtered = localDevices.filter(d => {
+        const matchesSearch = d.device_name.toLowerCase().includes(searchVal) || 
+                              d.hwid.toLowerCase().includes(searchVal) || 
+                              d.key.toLowerCase().includes(searchVal);
+        
+        const isExpired = d.expire_date ? new Date(d.expire_date) < new Date(todayStr) : false;
+        
+        let matchesStatus = true;
+        if (statusFilter === 'enabled') {
+          matchesStatus = d.is_enabled && !isExpired;
+        } else if (statusFilter === 'disabled') {
+          matchesStatus = !d.is_enabled || isExpired;
         }
 
-        // สุ่มสร้างรหัสห้องใหม่เมื่อกดปุ่มสุ่ม
-        btnGenerateCode.addEventListener('click', () => {
-            const randomCode = 'reaper-' + Math.floor(1000 + Math.random() * 9000);
-            roomCodeInput.value = randomCode;
-            log(`สร้างรหัสสุ่มเข้าคู่สำเร็จ: ${randomCode}`, "success");
-            showToast(`รหัสห้องของคุณคือ: ${randomCode} ส่งรหัสนี้ให้เพื่อนอีกเครื่องเพื่อคุยกัน!`);
-        });
+        return matchesSearch && matchesStatus;
+      });
 
-        // คอนฟิกูเรชัน PeerJS สำหรับ P2P Signaling
-        function initPeer() {
-            log("กำลังประเมินและตั้งค่าเครือข่ายความเร็วสูง...");
-            
-            // เปิดใช้ PeerJS Cloud สำหรับแลกเปลี่ยนไอพี (ฟรีและไม่ต้องตั้งค่าพรีฟิกใดๆ)
-            peer = new Peer({
-                host: 'peerjs-server.herokuapp.com',
-                secure: true,
-                port: 443,
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
-            });
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-slate-500">
+              <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+              ไม่พบอุปกรณ์ใดๆ เชื่อมต่อหรือลงทะเบียนตามเงื่อนไขที่กำหนด
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
-            peer.on('open', (id) => {
-                log(`ระบบพร้อมรอเปิดรับสาย. รหัสเครื่องของคุณคือ: ${id.substring(0, 8)}...`, "success");
-                connectionStatus.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> ระบบสแตนด์บายเรียบร้อย`;
-                connectionStatus.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-            });
-
-            peer.on('error', (err) => {
-                log(`เครือข่ายส่งข้อมูลติดขัด: ${err.type}`, "error");
-                if (err.type === 'unavailable-id') {
-                    showToast("รหัสห้องนี้ถูกใช้งานแล้ว โปรดเปลี่ยนรหัสเข้าห้องใหม่", "error");
-                }
-            });
-
-            // ตรวจสอบสายที่โทรเข้ามา
-            peer.on('call', (call) => {
-                log("มีสายเรียกเข้าตรงจากคู่สนทนา... รับสายอัตโนมัติ", "success");
-                
-                if (!localStream) {
-                    showToast("ไม่สามารถส่งสตรีมภาพกลับได้เนื่องจากกล้องไม่ได้รับอนุญาต", "error");
-                    return;
-                }
-
-                call.answer(localStream);
-                handleCall(call);
-            });
-
-            // ตรวจสอบการเชื่อมต่อส่งข้อความแชท
-            peer.on('connection', (conn) => {
-                log("คู่ของคุณเชื่อมโยงการคุยแชทสำเร็จ", "success");
-                currentConn = conn;
-                handleChatConnection(conn);
-            });
+      filtered.forEach(d => {
+        const isExpired = d.expire_date ? new Date(d.expire_date) < new Date(todayStr) : false;
+        
+        let statusBadge = "";
+        if (isExpired) {
+          statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold"><i class="fa-solid fa-circle text-[5px] mr-1"></i>หมดอายุ</span>`;
+        } else if (d.is_enabled) {
+          statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold"><i class="fa-solid fa-circle text-[5px] mr-1 animate-pulse"></i>ใช้งานอยู่</span>`;
+        } else {
+          statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold"><i class="fa-solid fa-circle text-[5px] mr-1"></i>บล็อกไว้</span>`;
         }
 
-        // เชื่อมต่อจับคู่ห้อง (Join Room)
-        btnJoinRoom.addEventListener('click', () => {
-            const targetRoomCode = roomCodeInput.value.trim();
-            if (!targetRoomCode) {
-                showToast("กรุณากรอกรหัสห้องเป้าหมายหรือพิมพ์ขึ้นมาใหม่", "error");
-                return;
-            }
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-900/40 transition-colors";
+        tr.innerHTML = `
+          <td class="p-4">
+            <div class="font-bold text-white">${d.device_name}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">${d.notes || 'ไม่มีหมายเหตุประกอบเครื่อง'}</div>
+          </td>
+          <td class="p-4 font-mono text-[11px] text-slate-400">${d.hwid}</td>
+          <td class="p-4 font-mono text-[11px] text-blue-400 font-semibold">${d.key}</td>
+          <td class="p-4 text-slate-400">${d.expire_date || 'ไม่มีระยะกำหนด'}</td>
+          <td class="p-4">${statusBadge}</td>
+          <td class="p-4 text-right">
+            <div class="flex justify-end gap-1.5">
+              <button onclick="toggleDeviceActivation('${d.id}', ${d.is_enabled})" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] text-slate-300" title="สลับสิทธิ์การส่งข้อมูล">
+                <i class="fa-solid ${d.is_enabled ? 'fa-toggle-on text-emerald-400' : 'fa-toggle-off'} text-sm"></i>
+              </button>
+              <button onclick="openDeviceConfigModal('edit', '${d.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg text-[10px]" title="ปรับแต่งสิทธิ์">
+                <i class="fa-regular fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteDeviceFromFirebase('${d.id}')" class="p-2 bg-slate-800 hover:bg-red-950/40 text-rose-400 hover:text-rose-300 rounded-lg text-[10px]" title="ทำลายคีย์ทิ้ง">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-            if (!localStream) {
-                showToast("กรุณาเปิดการเข้าถึงกล้องและไมค์ก่อนเริ่มสนทนา", "error");
-                return;
-            }
+    // สลับเปิดปิดสิทธิ์ความเร็วสูง
+    window.toggleDeviceActivation = async function(id, currentStatus) {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'devices', id);
+      try {
+        await updateDoc(docRef, { is_enabled: !currentStatus });
+        showToast("เปลี่ยนสถานะสิทธิ์เชื่อมต่ออุปกรณ์เรียลไทม์สำเร็จ", "success");
+        addLogEntryToFirebase("action", user.displayName || "Admin", `สลับสิทธิ์ทำงานสำหรับ ID: ${id}`);
+      } catch (e) {
+        showToast("การแก้ไขสิทธิ์ล้มเหลว ตรวจสอบสิทธิ์สิทธิของคุณ", "danger");
+      }
+    }
 
-            matchingOverlay.classList.remove('hidden');
-            matchingStatusText.textContent = `กำลังเจรจาสัญญาณกับห้อง ${targetRoomCode}...`;
-            log(`ส่งคำเชื่อมต่อไปยังห้องเป้าหมาย: ${targetRoomCode}...`);
-
-            // ทำการโทรออก (วิดีโอคอล) ไปยังรหัสห้องเป้าหมาย
-            const call = peer.call(targetRoomCode, localStream);
-            handleCall(call);
-
-            // ทำการเชื่อมต่อดาต้าเพื่อส่งข้อความแชท
-            const conn = peer.connect(targetRoomCode);
-            currentConn = conn;
-            handleChatConnection(conn);
-        });
-
-        // จัดการเหตุการณ์หลังต่อสายวิดีโอคอลสำเร็จ
-        function handleCall(call) {
-            currentCall = call;
-
-            call.on('stream', (remoteStream) => {
-                log("ดึงภาพสตรีมวิดีโอและเสียงของคู่สนทนาสำเร็จ!", "success");
-                remoteVideo.srcObject = remoteStream;
-                remotePlaceholder.classList.add('hidden');
-                matchingOverlay.classList.add('hidden');
-                btnSkip.classList.remove('hidden');
-                
-                chatInput.disabled = false;
-                document.getElementById('btn-send').disabled = false;
-                chatMode.textContent = "ONLINE (P2P)";
-                remoteLabel.textContent = "กำลังเชื่อมต่อสด";
-                
-                showToast("จับคู่และสตรีมวิดีโอเสร็จสมบูรณ์ คุยสดกันได้เลย!");
-            });
-
-            call.on('close', () => {
-                log("คู่สนทนาวางสายหรือหลุดการเชื่อมต่อ", "warn");
-                cleanUpWebRTC();
-            });
+    // ลบอุปกรณ์ออกจากดาต้าเบส
+    window.deleteDeviceFromFirebase = async function(id) {
+      openConfirmDialog(
+        "ทำลายใบอนุญาตอุปกรณ์?",
+        "เมื่อทำการลบแล้ว อุปกรณ์ปลายทางที่ใช้ HWID หรือ License Key ชุดนี้จะถูกปฏิเสธความเสถียรและปิดล็อกการเข้าถึงโปรแกรมของคุณทันที!",
+        async () => {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'devices', id);
+          try {
+            await deleteDoc(docRef);
+            showToast("เพิกถอนและลบอุปกรณ์ทิ้งจาก Firebase สำเร็จ", "success");
+            addLogEntryToFirebase("action", user.displayName || "Admin", `เพิกถอนใบสิทธิ์เครื่องและทำลายข้อมูลถาวร: ${id}`);
+          } catch (e) {
+            showToast("การลบล้มเหลว มีข้อขัดข้องทางด้านเน็ตเวิร์ก", "danger");
+          }
         }
+      );
+    }
 
-        // จัดการเมื่อมีดาต้าคุยแชทถูกส่งเข้ามา
-        function handleChatConnection(conn) {
-            conn.on('data', (data) => {
-                if (data && data.type === 'msg') {
-                    addMessage(data.text, 'remote');
-                }
-            });
+    // ================= การเรนเดอร์ตารางบันทึกกิจกรรม (LOGS TABLE RENDERING) =================
+    function renderLogsTable() {
+      const tbody = document.getElementById("logs-table-body");
+      tbody.innerHTML = "";
 
-            conn.on('close', () => {
-                cleanUpWebRTC();
-            });
+      const typeFilter = document.getElementById("log-type-filter").value;
+
+      const filtered = localLogs.filter(log => {
+        if (typeFilter === 'all') return true;
+        return log.category === typeFilter;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-8 text-center text-slate-500">
+              ไม่มีบันทึกข้อมูลย้อนหลังตามเงื่อนไขที่กรองไว้
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(log => {
+        let categoryStyle = "";
+        if (log.category === 'info') categoryStyle = "text-blue-400";
+        if (log.category === 'security') categoryStyle = "text-purple-400 font-semibold";
+        if (log.category === 'action') categoryStyle = "text-emerald-400 font-semibold";
+        if (log.category === 'error') categoryStyle = "text-rose-400 font-semibold";
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-900/30 transition-colors";
+        tr.innerHTML = `
+          <td class="p-4 text-slate-500 whitespace-nowrap">${log.timestamp}</td>
+          <td class="p-4 ${categoryStyle} uppercase tracking-wider text-[10px]">${log.category}</td>
+          <td class="p-4 font-semibold text-slate-400">[${log.actor}]</td>
+          <td class="p-4 text-slate-300 font-sans">${log.message}</td>
+          <td class="p-4 text-slate-500 text-right">${log.ip || '127.0.0.1'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ================= เรนเดอร์การ์ดผู้ดูแลระบบร่วม (MEMBERS RENDERING) =================
+    function renderMembersCards() {
+      const container = document.getElementById("users-grid-container");
+      container.innerHTML = "";
+
+      localMembers.forEach(m => {
+        const pfpMarkup = m.photoURL 
+          ? `<img src="${m.photoURL}" class="w-12 h-12 rounded-full border-2 border-slate-800 object-cover">`
+          : `<div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm border border-slate-700">${m.displayName.substring(0, 2).toUpperCase()}</div>`;
+
+        const isCurrent = user && user.uid === m.uid;
+
+        const card = document.createElement("div");
+        card.className = "bg-slate-900 border border-slate-800/80 p-5 rounded-2xl shadow-lg relative flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start">
+              ${pfpMarkup}
+              <span class="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                ${m.role || 'Admin'}
+              </span>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-bold text-white text-xs">${m.displayName}</h4>
+              <p class="text-[10px] text-slate-500 truncate mt-0.5">${m.email}</p>
+            </div>
+          </div>
+          <div class="mt-6 pt-3 border-t border-slate-800/40 flex justify-between items-center text-[10px] text-slate-500">
+            <span>ล็อกอินล่าสุด: ${m.lastActive}</span>
+            ${isCurrent ? '<span class="text-emerald-500 font-semibold flex items-center gap-1"><span class="w-1 h-1 bg-emerald-500 rounded-full"></span>คุณ ณ ตอนนี้</span>' : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ================= โฟลว์การจัดการสิทธิ์การยืนยันตัวตนจริงโซเชียล OAuth =================
+    window.loginWithSocial = async function(providerName) {
+      let provider;
+      if (providerName === 'google') {
+        provider = new GoogleAuthProvider();
+      } else if (providerName === 'github') {
+        provider = new GithubAuthProvider();
+      }
+
+      showToast("กำลังเรียกบริการแผงยืนยันตัวตนสากล...", "info");
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        console.error(err);
+        showToast("ล็อกอินล้มเหลว โปรดตรวจสอบ Pop-ups ในเว็บสิทธิ์ของคุณ", "danger");
+      }
+    }
+
+    window.loginAnonymously = async function() {
+      showToast("กำลังเริ่มรันเซสชันสำหรับผู้มาเยือน...", "info");
+      try {
+        await fbSignInAnonymously(auth);
+      } catch (err) {
+        showToast("ข้อผิดพลาดการเชื่อมต่อระบบสาธิตเสมือนจริง", "danger");
+      }
+    }
+
+    window.handleSignOut = async function() {
+      try {
+        addLogEntryToFirebase("info", user.displayName || "Admin", "ทำลายเซสชันความปลอดภัยและออกจากระบบ");
+        clearSubscriptions();
+        await signOut(auth);
+        showToast("คุณออกจากแผงควบคุมระบบคลาวด์เสร็จสิ้น", "info");
+      } catch (err) {
+        showToast("ไม่สามารถออกจากเซสชันหลักได้ ขัดข้องบางประการ", "danger");
+      }
+    }
+
+    // ================= การจัดการปรับเปลี่ยนสลับหน้าต่าง (TAB SWITCH) =================
+    window.switchTab = function(tabName) {
+      const tabs = ['dashboard', 'devices', 'users', 'logs'];
+      tabs.forEach(tab => {
+        const content = document.getElementById(`tab-${tab}`);
+        const navBtn = document.getElementById(`nav-${tab}`);
+        
+        if (tab === tabName) {
+          content.classList.remove("hidden");
+          navBtn.classList.add("bg-blue-600/10", "text-blue-400", "border-l-4", "border-blue-500");
+          navBtn.classList.remove("text-slate-400");
+        } else {
+          content.classList.add("hidden");
+          navBtn.classList.remove("bg-blue-600/10", "text-blue-400", "border-l-4", "border-blue-500");
+          navBtn.classList.add("text-slate-400");
         }
+      });
 
-        // ส่งข้อความแชทคุยกัน
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = chatInput.value.trim();
-            if (!text) return;
+      const pageTitles = {
+        'dashboard': 'ภาพรวมความจุใบอนุญาตทั้งหมด',
+        'devices': 'ระบบคัดกรองและสิทธิ์อุปกรณ์ปลายทาง (Devices)',
+        'users': 'ผู้บริหารสิทธิ์การเชื่อมต่อ (Console Team)',
+        'logs': 'บันทึกทราฟฟิกข้อมูลย้อนหลังเรียลไทม์'
+      };
+      document.getElementById("page-title").innerText = pageTitles[tabName];
+    }
 
-            // ส่งข้อมูลข้อความไปยังเครื่องเป้าหมาย
-            if (currentConn && currentConn.open) {
-                currentConn.send({
-                    type: 'msg',
-                    text: text
-                });
-                addMessage(text, 'local');
-                chatInput.value = '';
-            } else {
-                showToast("การเชื่อมต่อแชทขัดข้องในระหว่างส่งข้อความ", "error");
-            }
-        });
+    function updateUserProfileUI() {
+      if (!user) return;
+      document.getElementById("profile-display-name").innerText = user.displayName || "ผู้ใช้ไม่ระบุชื่อ";
+      document.getElementById("profile-email").innerText = user.email || "anonymous-mode";
 
-        // ปุ่มปิดสวิตช์ควบคุมเสียงและวิดีโอ
-        btnToggleMic.addEventListener('click', () => {
-            if (localStream) {
-                isMuted = !isMuted;
-                localStream.getAudioTracks()[0].enabled = !isMuted;
-                document.getElementById('mic-icon').className = isMuted ? "fa-solid fa-microphone-slash text-rose-500" : "fa-solid fa-microphone text-slate-300";
-                log(`ไมโครโฟน: ${isMuted ? 'ปิดเสียงชั่วคราว' : 'เปิดรับเสียง'}`, "warn");
-            }
-        });
+      const pfpBox = document.getElementById("pfp-container");
+      if (user.photoURL) {
+        pfpBox.style.backgroundImage = `url('${user.photoURL}')`;
+        pfpBox.innerText = "";
+      } else {
+        pfpBox.style.backgroundImage = "none";
+        pfpBox.innerText = (user.displayName || "AN").substring(0,2).toUpperCase();
+      }
+    }
 
-        btnToggleCam.addEventListener('click', () => {
-            if (localStream) {
-                isCamOff = !isCamOff;
-                localStream.getVideoTracks()[0].enabled = !isCamOff;
-                document.getElementById('cam-icon').className = isCamOff ? "fa-solid fa-video-slash text-rose-500" : "fa-solid fa-video text-slate-300";
-                if (isCamOff) {
-                    localPlaceholder.classList.remove('hidden');
-                    log("ปิดช่องสัญญาณกล้องวิดีโอ", "warn");
-                } else {
-                    localPlaceholder.classList.add('hidden');
-                    log("เปิดช่องสัญญาณกล้องวิดีโออีกครั้ง", "success");
-                }
-            }
-        });
+    // ================= MODALS SYSTEM BUILDER (CONFIRM & INPUT FORM) =================
+    window.closeModal = function() {
+      const mc = document.getElementById("modal-container");
+      mc.classList.add("hidden");
+      mc.innerHTML = "";
+    }
 
-        // ปุ่มตัดสาย / กดวางสาย
-        btnSkip.addEventListener('click', () => {
-            log("คุณเลือกกดยุติการแชทคุยสายนี้...", "warn");
-            cleanUpWebRTC();
-        });
+    function openConfirmDialog(title, desc, onConfirm) {
+      const mc = document.getElementById("modal-container");
+      mc.innerHTML = `
+        <div class="bg-slate-900 border border-slate-800 max-w-sm w-full p-6 rounded-2xl shadow-2xl flex flex-col gap-4">
+          <div class="flex items-center gap-3.5 border-b border-slate-800 pb-3">
+            <div class="w-10 h-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center text-lg">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">${title}</h3>
+            </div>
+          </div>
+          <p class="text-slate-400 text-xs leading-relaxed">${desc}</p>
+          <div class="flex justify-end gap-2.5 pt-2">
+            <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all">ยกเลิก</button>
+            <button id="modal-confirm-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold transition-all">ยืนยันทำรายการ</button>
+          </div>
+        </div>
+      `;
+      mc.classList.remove("hidden");
+      document.getElementById("modal-confirm-btn").onclick = () => {
+        closeModal();
+        if (onConfirm) onConfirm();
+      };
+    }
 
-        function cleanUpWebRTC() {
-            log("ล้างหน่วยความจำโครงข่ายและรีเซ็ตแชนเนลสตรีม...", "info");
-            
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
-            }
-            if (currentConn) {
-                currentConn.close();
-                currentConn = null;
-            }
+    // มอเดลเพิ่มหรือปรับปรุงข้อมูลใบอนุญาตอุปกรณ์แบบคลาวด์
+    window.openDeviceConfigModal = function(mode = 'add', deviceId = null) {
+      const mc = document.getElementById("modal-container");
+      let title = "ลงทะเบียนคีย์สิทธิ์ใบอนุญาตใหม่";
+      let device = { 
+        device_name: "", 
+        hwid: "", 
+        key: "LIC-" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000), 
+        expire_date: "2027-12-31", 
+        is_enabled: true, 
+        notes: "" 
+      };
 
-            remoteVideo.srcObject = null;
-            remotePlaceholder.classList.remove('hidden');
-            matchingOverlay.classList.add('hidden');
-            btnSkip.classList.add('hidden');
-            
-            chatInput.disabled = true;
-            document.getElementById('btn-send').disabled = true;
-            chatMode.textContent = "OFFLINE";
-            remoteLabel.textContent = "เพื่อนปลายทาง";
-            
-            chatContainer.innerHTML = `
-                <div id="welcome-chat-text" class="text-center py-8 text-slate-600 flex flex-col items-center">
-                    <i class="fa-solid fa-comment-dots text-xl mb-2 text-purple-950"></i>
-                    <p class="text-[10px]">จับคู่คุยกล้องสำเร็จ แผงพิมพ์แชทจะปลดล็อกทันที</p>
-                </div>
-            `;
+      if (mode === 'edit' && deviceId) {
+        title = "ปรับปรุงใบอนุญาตและระงับสิทธิ์เครื่อง";
+        const found = localDevices.find(d => d.id === deviceId);
+        if (found) device = { ...found };
+      }
+
+      mc.innerHTML = `
+        <div class="bg-slate-900 border border-slate-800 max-w-lg w-full p-6 rounded-2xl shadow-2xl flex flex-col gap-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-microchip text-blue-500 text-xs"></i>
+              <span>${title}</span>
+            </h3>
+            <button onclick="closeModal()" class="text-slate-500 hover:text-slate-300"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <form id="modal-device-form" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">ชื่อเครื่องแสดงผลในหน้าบอร์ด</label>
+                <input type="text" id="mdev-name" required value="${device.device_name}" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white text-xs focus:outline-none" placeholder="เช่น เครื่องฟร้อนท์ สาขา A">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">License Key (สัญญาสิทธิ์)</label>
+                <input type="text" id="mdev-key" required value="${device.key}" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-blue-400 font-mono text-xs focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">Hardware Identifier (HWID หรือ UUID ของเซิร์ฟเวอร์)</label>
+              <input type="text" id="mdev-hwid" required value="${device.hwid}" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white font-mono text-xs focus:outline-none" placeholder="เช่น DF12-9A92-CC42-4F11">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">วันสัญญาหมดอายุ</label>
+                <input type="date" id="mdev-expire" required value="${device.expire_date}" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white text-xs focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">การปล่อยสิทธิ์การเข้าถึง</label>
+                <select id="mdev-enabled" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white text-xs focus:outline-none">
+                  <option value="true" ${device.is_enabled ? 'selected' : ''}>เปิดทำงานตามปกติ (Enabled)</option>
+                  <option value="false" ${!device.is_enabled ? 'selected' : ''}>ปิดการเชื่อมโยงชั่วคราว (Disabled)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-400 mb-1.5">บันทึกเพิ่มเติม</label>
+              <textarea id="mdev-notes" rows="2" class="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl py-2 px-3 text-white text-xs focus:outline-none" placeholder="รายละเอียดผู้ซื้อหรือช่องทางการชำระเงิน">${device.notes || ''}</textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">ยกเลิก</button>
+              <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">บันทึกลง Firestore</button>
+            </div>
+          </form>
+        </div>
+      `;
+      mc.classList.remove("hidden");
+
+      document.getElementById("modal-device-form").onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const device_name = document.getElementById("mdev-name").value.trim();
+        const key = document.getElementById("mdev-key").value.trim();
+        const hwid = document.getElementById("mdev-hwid").value.trim().toUpperCase();
+        const expire_date = document.getElementById("mdev-expire").value;
+        const is_enabled = document.getElementById("mdev-enabled").value === 'true';
+        const notes = document.getElementById("mdev-notes").value.trim();
+
+        const payload = { device_name, key, hwid, expire_date, is_enabled, notes };
+
+        try {
+          if (mode === 'add') {
+            const devicesRef = collection(db, 'artifacts', appId, 'public', 'data', 'devices');
+            await addDoc(devicesRef, payload);
+            showToast("เพิ่มอุปกรณ์สิทธิ์เข้าระบบคลาวด์เรียบร้อย", "success");
+            addLogEntryToFirebase("action", user.displayName || "Admin", `ลงทะเบียนอุปกรณ์สิทธิ์ใหม่: ${device_name}`);
+          } else {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'devices', deviceId);
+            await updateDoc(docRef, payload);
+            showToast("อัปเดตรายละเอียดสัญญาสิทธิ์ความปลอดภัยสำเร็จ", "success");
+            addLogEntryToFirebase("action", user.displayName || "Admin", `แก้ไขรายละเอียดใบอนุญาตเครื่อง: ${device_name}`);
+          }
+          closeModal();
+        } catch (err) {
+          showToast("ไม่สามารถประมวลผลข้อมูลลง Firestore ได้", "danger");
         }
+      }
+    }
 
-        function addMessage(text, sender) {
-            const welcomeText = document.getElementById('welcome-chat-text');
-            if (welcomeText) welcomeText.remove();
+    // ================= ระบบปรับปรุง Firebase Config นอกเฟรมเวิร์กเดโม =================
+    window.toggleFirebaseConfigPanel = function() {
+      const panel = document.getElementById("firebase-config-panel");
+      const caret = document.getElementById("config-caret");
+      panel.classList.toggle("hidden");
+      caret.classList.toggle("fa-chevron-up");
+      caret.classList.toggle("fa-chevron-down");
+    }
 
-            const bubble = document.createElement('div');
-            bubble.className = `flex flex-col ${sender === 'local' ? 'items-end' : 'items-start'}`;
-            
-            const alignStyle = sender === 'local' 
-                ? 'bg-purple-600 text-white rounded-t-xl rounded-bl-xl shadow shadow-purple-950/30' 
-                : 'bg-slate-900 text-slate-100 rounded-t-xl rounded-br-xl border border-purple-950/20';
+    window.applyCustomFirebase = function() {
+      const apiKey = document.getElementById("fb-apiKey").value.trim();
+      const authDomain = document.getElementById("fb-authDomain").value.trim();
+      const projectId = document.getElementById("fb-projectId").value.trim();
 
-            bubble.innerHTML = `
-                <span class="text-[9px] text-slate-600 mb-0.5 px-1">${sender === 'local' ? 'ตัวคุณ' : 'เพื่อน'}</span>
-                <div class="px-3.5 py-2 max-w-[85%] text-xs leading-relaxed ${alignStyle}">
-                    ${text}
-                </div>
-            `;
-            
-            chatContainer.appendChild(bubble);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    </script>
+      if (!apiKey || !authDomain || !projectId) {
+        showToast("กรุณากรอกฟิลด์ Config สำคัญให้ครบถ้วนก่อนส่งใช้งาน", "warning");
+        return;
+      }
+
+      const customConfig = {
+        apiKey,
+        authDomain,
+        projectId,
+        storageBucket: `${projectId}.appspot.com`
+      };
+
+      bootstrapFirebase(customConfig);
+    }
+
+    // ================= TOASTS ALERT SYSTEM FUNCTION =================
+    function showToast(message, type = "info") {
+      const container = document.getElementById("notification-container");
+      const id = Date.now();
+      
+      let icon = "fa-info-circle text-blue-400";
+      let border = "border-slate-800";
+      let bg = "bg-slate-900";
+      
+      if (type === "success") {
+        icon = "fa-circle-check text-emerald-400";
+        border = "border-emerald-500/20";
+        bg = "bg-emerald-950/30";
+      } else if (type === "warning") {
+        icon = "fa-circle-exclamation text-amber-400";
+        border = "border-amber-500/20";
+        bg = "bg-amber-950/30";
+      } else if (type === "danger") {
+        icon = "fa-triangle-exclamation text-rose-400";
+        border = "border-rose-500/20";
+        bg = "bg-rose-950/30";
+      }
+
+      const toast = document.createElement("div");
+      toast.id = `toast-${id}`;
+      toast.className = `p-4 rounded-xl border ${border} ${bg} backdrop-blur-md shadow-2xl flex items-start gap-3 transform translate-x-10 opacity-0 transition-all duration-300 pointer-events-auto`;
+      toast.innerHTML = `
+        <div class="text-sm mt-0.5"><i class="fa-solid ${icon}"></i></div>
+        <div class="flex-1">
+          <p class="text-[11px] font-semibold text-white leading-normal">${message}</p>
+        </div>
+        <button onclick="document.getElementById('toast-${id}').remove()" class="text-slate-500 hover:text-slate-300"><i class="fa-solid fa-xmark text-xs"></i></button>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove("translate-x-10", "opacity-0"), 50);
+      setTimeout(() => { if(toast) toast.remove(); }, 5000);
+    }
+
+    // ปิดสวิตช์มือถือสไลด์ข้าง
+    window.toggleMobileSidebar = function() {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.classList.toggle("-translate-x-full");
+    }
+
+    // เริ่มต้นเชื่อมโยงสิทธิ์ระบบ Firebase ครั้งแรก
+    bootstrapFirebase(firebaseConfig);
+
+  </script>
 </body>
 </html>
